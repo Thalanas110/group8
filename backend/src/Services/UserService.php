@@ -1,0 +1,147 @@
+<?php
+
+declare(strict_types=1);
+
+namespace App\Services;
+
+use App\Database\RoutineGateway;
+use App\Security\AesGcmCrypto;
+use App\Security\PasswordHasher;
+use App\Services\Support\ExamMapper;
+use App\Services\Support\ValueNormalizer;
+use App\Support\ApiException;
+use App\Support\Helpers;
+
+final class UserService
+{
+    public function __construct(
+        private RoutineGateway $gateway,
+        private AesGcmCrypto $crypto,
+        private PasswordHasher $passwordHasher,
+        private ExamMapper $mapper,
+        private ValueNormalizer $normalizer,
+    ) {
+    }
+
+    /**
+     * @return array<int, array<string, mixed>>
+     */
+    public function getUsers(): array
+    {
+        $rows = $this->gateway->call('sp_users_get_all');
+        return array_map(fn (array $row): array => $this->mapper->mapUserRow($row), $rows);
+    }
+
+    /**
+     * @param array<string, mixed> $payload
+     * @return array<string, mixed>
+     */
+    public function createUser(array $payload): array
+    {
+        $name = trim((string) ($payload['name'] ?? ''));
+        $email = strtolower(trim((string) ($payload['email'] ?? '')));
+        $role = (string) ($payload['role'] ?? 'student');
+        $password = (string) ($payload['password'] ?? $this->generateDefaultPassword());
+        $joinedAt = $this->normalizer->normalizeDate((string) ($payload['joinedAt'] ?? date('Y-m-d')), false);
+
+        if ($name === '' || $email === '' || !filter_var($email, FILTER_VALIDATE_EMAIL)) {
+            throw new ApiException(422, 'Valid name and email are required.');
+        }
+
+        if (!in_array($role, ['student', 'teacher', 'admin'], true)) {
+            throw new ApiException(422, 'Invalid role.');
+        }
+
+        $rows = $this->gateway->call('sp_users_create', [
+            Helpers::uuidV4(),
+            $name,
+            $email,
+            $this->passwordHasher->hash($password),
+            $role,
+            $this->crypto->encrypt($this->normalizer->nullableString($payload['department'] ?? null)),
+            $this->crypto->encrypt($this->normalizer->nullableString($payload['phone'] ?? null)),
+            $this->crypto->encrypt($this->normalizer->nullableString($payload['bio'] ?? null)),
+            $joinedAt,
+        ]);
+
+        $row = $rows[0] ?? null;
+        if (!is_array($row)) {
+            throw new ApiException(500, 'User creation failed.');
+        }
+
+        return $this->mapper->mapUserRow($row);
+    }
+
+    /**
+     * @param array<string, mixed> $payload
+     * @return array<string, mixed>
+     */
+    public function updateUser(string $userId, array $payload): array
+    {
+        $existingRow = $this->gateway->call('sp_auth_get_user_by_id', [$userId])[0] ?? null;
+        if (!is_array($existingRow)) {
+            throw new ApiException(404, 'User not found.');
+        }
+
+        $existing = $this->mapper->mapUserRow($existingRow);
+        $name = trim((string) ($payload['name'] ?? $existing['name']));
+        $email = strtolower(trim((string) ($payload['email'] ?? $existing['email'])));
+        $role = (string) ($payload['role'] ?? $existing['role']);
+
+        if ($name === '' || !filter_var($email, FILTER_VALIDATE_EMAIL)) {
+            throw new ApiException(422, 'Valid name and email are required.');
+        }
+
+        if (!in_array($role, ['student', 'teacher', 'admin'], true)) {
+            throw new ApiException(422, 'Invalid role.');
+        }
+
+        $passwordHash = (string) ($existingRow['passwordHash'] ?? '');
+        if (array_key_exists('password', $payload) && trim((string) $payload['password']) !== '') {
+            $passwordHash = $this->passwordHasher->hash((string) $payload['password']);
+        }
+
+        $department = array_key_exists('department', $payload)
+            ? $this->normalizer->nullableString($payload['department'])
+            : ($existing['department'] ?? null);
+
+        $phone = array_key_exists('phone', $payload)
+            ? $this->normalizer->nullableString($payload['phone'])
+            : ($existing['phone'] ?? null);
+
+        $bio = array_key_exists('bio', $payload)
+            ? $this->normalizer->nullableString($payload['bio'])
+            : ($existing['bio'] ?? null);
+
+        $joinedAt = $this->normalizer->normalizeDate((string) ($payload['joinedAt'] ?? $existing['joinedAt']), false);
+
+        $rows = $this->gateway->call('sp_users_update_admin', [
+            $userId,
+            $name,
+            $email,
+            $passwordHash,
+            $role,
+            $this->crypto->encrypt($department),
+            $this->crypto->encrypt($phone),
+            $this->crypto->encrypt($bio),
+            $joinedAt,
+        ]);
+
+        $row = $rows[0] ?? null;
+        if (!is_array($row)) {
+            throw new ApiException(500, 'User update failed.');
+        }
+
+        return $this->mapper->mapUserRow($row);
+    }
+
+    public function deleteUser(string $userId): void
+    {
+        $this->gateway->call('sp_users_delete', [$userId]);
+    }
+
+    private function generateDefaultPassword(): string
+    {
+        return 'Temp' . substr(bin2hex(random_bytes(6)), 0, 8) . '!1a';
+    }
+}
