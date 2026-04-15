@@ -1,0 +1,26 @@
+import React, { useEffect } from 'react';
+import { useNavigate } from 'react-router';
+import { LayoutDashboard, BookOpen, BarChart2, Users } from 'lucide-react';
+import { useApp } from '../../context/AppContext';
+import { DashboardLayout } from '../../components/shared/DashboardLayout';
+
+const navItems = [
+  { path: '/student', label: 'Dashboard', icon: LayoutDashboard },
+  { path: '/student/exams', label: 'My Exams', icon: BookOpen },
+  { path: '/student/results', label: 'Results', icon: BarChart2 },
+  { path: '/student/classes', label: 'My Classes', icon: Users },
+];
+
+export function StudentLayout() {
+  const { currentUser } = useApp();
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    if (!currentUser) { navigate('/', { replace: true }); return; }
+    if (currentUser.role !== 'student') { navigate(`/${currentUser.role}`, { replace: true }); }
+  }, [currentUser, navigate]);
+
+  if (!currentUser || currentUser.role !== 'student') return null;
+
+  return <DashboardLayout navItems={navItems} roleLabel="Student" />;
+}
