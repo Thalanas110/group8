@@ -33,6 +33,7 @@ use App\Services\ReportService;
 use App\Services\ResultService;
 use App\Services\SeedService;
 use App\Services\Support\ExamMapper;
+use App\Services\Support\ExamPayloadValidator;
 use App\Services\Support\ValueNormalizer;
 use App\Services\UserService;
 use Throwable;
@@ -66,6 +67,7 @@ final class ServiceContainer
         $jwtService = new JwtService($config->jwtSecret);
         $normalizer = new ValueNormalizer();
         $mapper = new ExamMapper($crypto, $normalizer);
+        $examPayloadValidator = new ExamPayloadValidator();
 
         $authService = new AuthService(
             config: $config,
@@ -95,6 +97,7 @@ final class ServiceContainer
             gateway: $gateway,
             mapper: $mapper,
             normalizer: $normalizer,
+            validator: $examPayloadValidator,
         );
 
         $resultService = new ResultService(

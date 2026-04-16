@@ -11,7 +11,8 @@
         }
     },
     "scripts": {
-        "smoke-test": "php tests/SecuritySmokeTest.php"
+        "smoke-test": "php tests/SecuritySmokeTest.php",
+        "exam-validation-test": "php tests/ExamValidationTest.php"
     },
     "config": {
         "optimize-autoloader": true,

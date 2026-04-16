@@ -6,6 +6,7 @@ namespace App\Services;
 
 use App\Database\RoutineGateway;
 use App\Services\Support\ExamMapper;
+use App\Services\Support\ExamPayloadValidator;
 use App\Services\Support\ValueNormalizer;
 use App\Support\ApiException;
 use App\Support\Helpers;
@@ -16,6 +17,7 @@ final class ExamService
         private RoutineGateway $gateway,
         private ExamMapper $mapper,
         private ValueNormalizer $normalizer,
+        private ExamPayloadValidator $validator,
     ) {
     }
 
@@ -60,42 +62,23 @@ final class ExamService
      */
     public function createExam(array $authUser, array $payload): array
     {
-        $title = trim((string) ($payload['title'] ?? ''));
-        $description = trim((string) ($payload['description'] ?? ''));
-        $classId = trim((string) ($payload['classId'] ?? ''));
-        $duration = (int) ($payload['duration'] ?? 0);
-        $totalMarks = (int) ($payload['totalMarks'] ?? 0);
-        $passingMarks = (int) ($payload['passingMarks'] ?? 0);
-        $status = (string) ($payload['status'] ?? 'draft');
-
-        if ($title === '' || $description === '' || $classId === '') {
-            throw new ApiException(422, 'title, description, and classId are required.');
-        }
-
-        if (!in_array($status, ['draft', 'published', 'completed'], true)) {
-            throw new ApiException(422, 'Invalid exam status.');
-        }
-
-        $questions = $this->normalizer->normalizeQuestions($payload['questions'] ?? []);
-
-        $examId = (string) ($payload['id'] ?? Helpers::uuidV4());
-        $teacherId = $authUser['role'] === 'teacher'
-            ? (string) $authUser['id']
-            : (string) ($payload['teacherId'] ?? $authUser['id']);
+        $validated = $this->validator->validateAndBuild($payload);
+        $examId = $this->resolveExamId($payload);
+        $teacherId = $this->resolveTeacherId($authUser, $payload);
 
         $rows = $this->gateway->call('sp_exams_create', [
             $examId,
-            $title,
-            $description,
-            $classId,
+            $validated['title'],
+            $validated['description'],
+            $validated['classId'],
             $teacherId,
-            $duration,
-            $totalMarks,
-            $passingMarks,
-            $this->normalizer->normalizeDate((string) ($payload['startDate'] ?? 'now'), true),
-            $this->normalizer->normalizeDate((string) ($payload['endDate'] ?? 'now'), true),
-            $status,
-            json_encode($questions, JSON_UNESCAPED_UNICODE),
+            $validated['duration'],
+            $validated['totalMarks'],
+            $validated['passingMarks'],
+            $validated['startDate'],
+            $validated['endDate'],
+            $validated['status'],
+            $this->encodeQuestions($validated['questions']),
             $this->normalizer->normalizeDate((string) ($payload['createdAt'] ?? date('Y-m-d')), false),
         ]);
 
@@ -126,40 +109,22 @@ final class ExamService
             throw new ApiException(403, 'Teachers can only update their own exams.');
         }
 
-        $title = trim((string) ($payload['title'] ?? $existing['title']));
-        $description = trim((string) ($payload['description'] ?? $existing['description']));
-        $classId = trim((string) ($payload['classId'] ?? $existing['classId']));
-        $status = (string) ($payload['status'] ?? $existing['status']);
-
-        if ($title === '' || $description === '' || $classId === '') {
-            throw new ApiException(422, 'title, description, and classId are required.');
-        }
-
-        if (!in_array($status, ['draft', 'published', 'completed'], true)) {
-            throw new ApiException(422, 'Invalid exam status.');
-        }
-
-        $questions = array_key_exists('questions', $payload)
-            ? $this->normalizer->normalizeQuestions($payload['questions'])
-            : $existing['questions'];
-
-        $teacherId = $authUser['role'] === 'teacher'
-            ? (string) $authUser['id']
-            : (string) ($payload['teacherId'] ?? $existing['teacherId']);
+        $validated = $this->validator->validateAndBuild($payload, $existing);
+        $teacherId = $this->resolveTeacherId($authUser, $payload, $existing);
 
         $updatedRows = $this->gateway->call('sp_exams_update', [
             $examId,
-            $title,
-            $description,
-            $classId,
+            $validated['title'],
+            $validated['description'],
+            $validated['classId'],
             $teacherId,
-            (int) ($payload['duration'] ?? $existing['duration']),
-            (int) ($payload['totalMarks'] ?? $existing['totalMarks']),
-            (int) ($payload['passingMarks'] ?? $existing['passingMarks']),
-            $this->normalizer->normalizeDate((string) ($payload['startDate'] ?? $existing['startDate']), true),
-            $this->normalizer->normalizeDate((string) ($payload['endDate'] ?? $existing['endDate']), true),
-            $status,
-            json_encode($questions, JSON_UNESCAPED_UNICODE),
+            $validated['duration'],
+            $validated['totalMarks'],
+            $validated['passingMarks'],
+            $validated['startDate'],
+            $validated['endDate'],
+            $validated['status'],
+            $this->encodeQuestions($validated['questions']),
         ]);
 
         $updatedRow = $updatedRows[0] ?? null;
@@ -188,4 +153,47 @@ final class ExamService
 
         $this->gateway->call('sp_exams_delete', [$examId]);
     }
+
+    /**
+     * @param array<string, mixed> $payload
+     */
+    private function resolveExamId(array $payload): string
+    {
+        $examId = trim((string) ($payload['id'] ?? Helpers::uuidV4()));
+        return $examId === '' ? Helpers::uuidV4() : $examId;
+    }
+
+    /**
+     * @param array<string, mixed> $authUser
+     * @param array<string, mixed> $payload
+     * @param array<string, mixed>|null $existing
+     */
+    private function resolveTeacherId(array $authUser, array $payload, ?array $existing = null): string
+    {
+        if (($authUser['role'] ?? '') === 'teacher') {
+            return (string) $authUser['id'];
+        }
+
+        $fallback = $existing['teacherId'] ?? ($authUser['id'] ?? '');
+        $teacherId = trim((string) ($payload['teacherId'] ?? $fallback));
+        if ($teacherId === '') {
+            throw new ApiException(422, 'teacherId is required.');
+        }
+
+        return $teacherId;
+    }
+
+    /**
+     * @param array<int, array<string, mixed>> $questions
+     */
+    private function encodeQuestions(array $questions): string
+    {
+        $encoded = json_encode($questions, JSON_UNESCAPED_UNICODE);
+        if (!is_string($encoded)) {
+            throw new ApiException(500, 'Unable to encode exam questions.');
+        }
+
+        return $encoded;
+    }
 }
+

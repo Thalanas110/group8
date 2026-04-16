@@ -28,9 +28,9 @@ interface AppContextType {
   joinClassByCode: (code: string, studentId: string) => Promise<{ success: boolean; error?: string }>;
   leaveClass: (classId: string, studentId: string) => void;
 
-  addExam: (exam: Omit<Exam, 'id' | 'createdAt'>) => Exam;
-  updateExam: (id: string, data: Partial<Exam>) => void;
-  deleteExam: (id: string) => void;
+  addExam: (exam: Omit<Exam, 'id' | 'createdAt'>) => Promise<Exam>;
+  updateExam: (id: string, data: Partial<Exam>) => Promise<Exam>;
+  deleteExam: (id: string) => Promise<void>;
 
   submitExam: (submission: Omit<Submission, 'id'>) => void;
   gradeSubmission: (id: string, answers: { questionId: string; marksAwarded: number }[], feedback: string) => void;
@@ -261,21 +261,29 @@ export function AppProvider({ children }: { children: ReactNode }) {
 
   // ── Exam CRUD ───────────────────────────────────────────────────────────────
 
-  const addExam = (data: Omit<Exam, 'id' | 'createdAt'>) => {
-    const newExam: Exam = { ...data, id: generateId(), createdAt: today() };
-    setExams(prev => [...prev, newExam]);
-    examApi.create(newExam).catch(err => console.error('addExam API error:', err));
-    return newExam;
+  const addExam = async (data: Omit<Exam, 'id' | 'createdAt'>): Promise<Exam> => {
+    const created = await examApi.create(data) as unknown as Exam;
+    setExams(prev => {
+      const existingIndex = prev.findIndex(e => e.id === created.id);
+      if (existingIndex >= 0) {
+        return prev.map(e => e.id === created.id ? created : e);
+      }
+
+      return [...prev, created];
+    });
+
+    return created;
   };
 
-  const updateExam = (id: string, data: Partial<Exam>) => {
-    setExams(prev => prev.map(e => e.id === id ? { ...e, ...data } : e));
-    examApi.update(id, data).catch(err => console.error('updateExam API error:', err));
+  const updateExam = async (id: string, data: Partial<Exam>): Promise<Exam> => {
+    const updated = await examApi.update(id, data) as unknown as Exam;
+    setExams(prev => prev.map(e => e.id === id ? updated : e));
+    return updated;
   };
 
-  const deleteExam = (id: string) => {
+  const deleteExam = async (id: string): Promise<void> => {
+    await examApi.remove(id);
     setExams(prev => prev.filter(e => e.id !== id));
-    examApi.remove(id).catch(err => console.error('deleteExam API error:', err));
   };
 
   // ── Submissions ─────────────────────────────────────────────────────────────

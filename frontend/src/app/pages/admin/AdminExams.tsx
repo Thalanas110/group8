@@ -19,8 +19,29 @@ export function AdminExams() {
     return matchSearch && matchStatus;
   });
 
-  const handleDelete = (id: string) => { deleteExam(id); toast.success('Exam deleted'); };
-  const handleStatusChange = (id: string, status: ExamStatus) => { updateExam(id, { status }); toast.success(`Status changed to ${status}`); };
+  const handleDelete = async (id: string) => {
+    try {
+      await deleteExam(id);
+      toast.success('Exam deleted');
+    } catch (error) {
+      const message = error instanceof Error && error.message.trim() !== ''
+        ? error.message
+        : 'Unable to delete exam.';
+      toast.error(message);
+    }
+  };
+
+  const handleStatusChange = async (id: string, status: ExamStatus) => {
+    try {
+      await updateExam(id, { status });
+      toast.success(`Status changed to ${status}`);
+    } catch (error) {
+      const message = error instanceof Error && error.message.trim() !== ''
+        ? error.message
+        : 'Unable to update exam status.';
+      toast.error(message);
+    }
+  };
 
   const examToView = viewExam ? exams.find(e => e.id === viewExam) : null;
   const viewExamClass = examToView ? classes.find(c => c.id === examToView.classId) : null;
@@ -186,7 +207,12 @@ export function AdminExams() {
         )}
       </Modal>
 
-      <ConfirmDialog isOpen={!!deleteTarget} onClose={() => setDeleteTarget(null)} onConfirm={() => { if (deleteTarget) { handleDelete(deleteTarget); setDeleteTarget(null); } }}
+      <ConfirmDialog isOpen={!!deleteTarget} onClose={() => setDeleteTarget(null)} onConfirm={async () => {
+        if (deleteTarget) {
+          await handleDelete(deleteTarget);
+        }
+        setDeleteTarget(null);
+      }}
         title="Delete Exam" message="Are you sure you want to delete this exam? All related submissions will also be removed." confirmLabel="Delete Exam" />
     </div>
   );
