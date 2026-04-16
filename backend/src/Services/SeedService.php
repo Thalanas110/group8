@@ -29,6 +29,10 @@ final class SeedService
     public function bootstrap(): void
     {
         $this->seedCoreAccounts();
+        if ($this->hasAnyClasses()) {
+            return;
+        }
+
         $this->seedDemoData();
     }
 
@@ -121,6 +125,11 @@ final class SeedService
             json_encode($questions, JSON_UNESCAPED_UNICODE),
             date('Y-m-d'),
         ]);
+    }
+
+    private function hasAnyClasses(): bool
+    {
+        return $this->gateway->call('sp_classes_get_all') !== [];
     }
 
     private function hasSeedCredentialsConfigured(): bool
