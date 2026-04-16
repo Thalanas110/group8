@@ -1,0 +1,7 @@
+.git
+.gitignore
+frontend/node_modules
+frontend/dist
+backend/.env
+**/.DS_Store
+**/Thumbs.db

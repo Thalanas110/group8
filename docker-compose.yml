@@ -1,0 +1,70 @@
+services:
+  db:
+    image: mysql:8.4
+    restart: unless-stopped
+    environment:
+      MYSQL_ROOT_PASSWORD: root
+    volumes:
+      - db_data:/var/lib/mysql
+      - ./backend/database/schema_routines.sql:/docker-entrypoint-initdb.d/01-schema_routines.sql:ro
+      - ./backend/database/logging_routines.sql:/docker-entrypoint-initdb.d/02-logging_routines.sql:ro
+    healthcheck:
+      test: ["CMD-SHELL", "mysqladmin ping -h 127.0.0.1 -uroot -p$$MYSQL_ROOT_PASSWORD || exit 1"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+      start_period: 20s
+
+  backend:
+    build:
+      context: .
+      dockerfile: docker/backend/Dockerfile
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      DB_HOST: db
+      DB_PORT: 3306
+      DB_NAME: examhub
+      DB_USER: root
+      DB_PASS: root
+      LOG_DB_HOST: db
+      LOG_DB_PORT: 3306
+      LOG_DB_NAME: examhub_logs
+      LOG_DB_USER: root
+      LOG_DB_PASS: root
+      LOG_RETENTION_DAYS: 90
+      APP_JWT_SECRET: dev-jwt-secret-change-me
+      APP_ENCRYPTION_KEY: base64:RaP/ZRjHT7vR6WD2xM5S7ldg3rk0+m939M+FvNrO7ds=
+      AUTH_TOKEN_TTL_SECONDS: 28800
+      CORS_ALLOW_ALL: "true"
+      SEED_ADMIN_NAME: System Administrator
+      SEED_ADMIN_EMAIL: admin@examhub.local
+      SEED_ADMIN_PASSWORD: Admin123!
+      SEED_ADMIN_DEPARTMENT: Administration
+      SEED_TEACHER_NAME: Seed Teacher
+      SEED_TEACHER_EMAIL: teacher@examhub.local
+      SEED_TEACHER_PASSWORD: Teacher123!
+      SEED_TEACHER_DEPARTMENT: Education
+      SEED_STUDENT_NAME: Seed Student
+      SEED_STUDENT_EMAIL: student@examhub.local
+      SEED_STUDENT_PASSWORD: Student123!
+      SEED_STUDENT_DEPARTMENT: General Studies
+    ports:
+      - "8081:80"
+
+  frontend:
+    build:
+      context: .
+      dockerfile: docker/frontend/Dockerfile
+      args:
+        VITE_PHP_BASE_URL: /api
+    restart: unless-stopped
+    depends_on:
+      - backend
+    ports:
+      - "8080:80"
+
+volumes:
+  db_data:

@@ -18,14 +18,16 @@ No seed credentials are hardcoded in PHP or SQL files.
 
 1. Create `.env` from `.env.example`:
    - `backend/.env`
-2. Import SQL schema and routines:
+2. Install PHP dependencies with Composer:
+   - from `backend/`, run `composer install`
+3. Import SQL schema and routines:
    - `backend/database/schema_routines.sql`
    - `backend/database/logging_routines.sql`
-3. Configure logging DB in `.env` if different from primary DB:
+4. Configure logging DB in `.env` if different from primary DB:
    - `LOG_DB_HOST`, `LOG_DB_PORT`, `LOG_DB_NAME`, `LOG_DB_USER`, `LOG_DB_PASS`
    - `LOG_RETENTION_DAYS` (default: `90`)
-4. Ensure Apache rewrite is enabled (`mod_rewrite`).
-5. Serve this repo so `/api/*` resolves to `api/index.php`.
+5. Ensure Apache rewrite is enabled (`mod_rewrite`).
+6. Serve this repo so `/api/*` resolves to `api/index.php`.
 
 ## Endpoints
 

@@ -13,7 +13,7 @@ use App\Routing\Router;
 use App\Routing\Routes\ApiRouteRegistry;
 use App\Support\Helpers;
 
-require_once __DIR__ . '/../backend/src/bootstrap.php';
+require_once __DIR__ . '/../backend/bootstrap/autoload.php';
 
 $env = new Env(__DIR__ . '/../backend/.env');
 $config = AppConfig::fromEnv($env);
