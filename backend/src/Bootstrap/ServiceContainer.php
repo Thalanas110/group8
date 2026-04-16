@@ -9,6 +9,7 @@ use App\Controllers\AdminController;
 use App\Controllers\AuthController;
 use App\Controllers\ClassesController;
 use App\Controllers\DataController;
+use App\Controllers\DocsController;
 use App\Controllers\ExamsController;
 use App\Controllers\HealthController;
 use App\Controllers\ProfileController;
@@ -24,6 +25,7 @@ use App\Security\AesGcmCrypto;
 use App\Security\JwtService;
 use App\Security\PasswordHasher;
 use App\Services\AuthService;
+use App\Services\ApiDocsVerificationService;
 use App\Services\ClassService;
 use App\Services\DataService;
 use App\Services\ExamService;
@@ -53,6 +55,7 @@ final class ServiceContainer
         public AdminController $adminController,
         public ReportsController $reportsController,
         public DataController $dataController,
+        public DocsController $docsController,
     ) {
     }
 
@@ -119,6 +122,8 @@ final class ServiceContainer
             normalizer: $normalizer,
         );
 
+        $docsVerificationService = new ApiDocsVerificationService();
+
         $logGateway = null;
         try {
             $logPdo = (new LogDbConnection($config))->pdo();
@@ -143,6 +148,7 @@ final class ServiceContainer
             adminController: new AdminController($reportService),
             reportsController: new ReportsController($reportService),
             dataController: new DataController($dataService, $seedService),
+            docsController: new DocsController($docsVerificationService),
         );
     }
 }

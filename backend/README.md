@@ -41,6 +41,7 @@ All frontend endpoints are implemented:
 - Reports: `/reports/exam-performance`, `/reports/pass-fail`
 - Classes: `/classes`, `/classes/join`, `/classes/:id/leave`, `/classes/:id/enroll`, `/classes/:id/students/:studentId`
 - Data: `/data/all`, `/data/reseed`
+- Docs: `/docs/verify` (admin, validates required endpoint coverage from backend route code)
 
 ## Frontend Connection
 

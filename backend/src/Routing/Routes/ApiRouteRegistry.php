@@ -21,5 +21,6 @@ final class ApiRouteRegistry
         AdminRoutes::register($router, $container->adminController);
         ReportRoutes::register($router, $container->reportsController);
         DataRoutes::register($router, $container->dataController);
+        DocsRoutes::register($router, $container->docsController);
     }
 }

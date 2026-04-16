@@ -1,8 +1,8 @@
-/**
+﻿/**
  * ExamHub API Service (PHP backend only).
  */
 
-// ─── Backend URLs ─────────────────────────────────────────────────────────────
+// â”€â”€â”€ Backend URLs â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 const envPhpBaseUrl = (import.meta.env.VITE_PHP_BASE_URL as string | undefined)?.trim();
 export const PHP_BASE_URL = envPhpBaseUrl && envPhpBaseUrl !== ''
@@ -10,7 +10,7 @@ export const PHP_BASE_URL = envPhpBaseUrl && envPhpBaseUrl !== ''
   : 'http://localhost/examsysnewest/api';
 
 
-// ─── Core HTTP Helper ─────────────────────────────────────────────────────────
+// â”€â”€â”€ Core HTTP Helper â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 export async function request<T>(
   method: string,
@@ -41,7 +41,7 @@ export async function request<T>(
   return res.json() as Promise<T>;
 }
 
-// ─── Auth  POST /auth/register  POST /auth/login ──────────────────────────────
+// â”€â”€â”€ Auth  POST /auth/register  POST /auth/login â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 export interface RegisterPayload {
   name: string;
@@ -79,7 +79,7 @@ export const authApi = {
     request<{ success: boolean }>('DELETE', '/auth/logout', undefined, true),
 };
 
-// ─── Profile  GET /users/profile  PUT /users/profile ─────────────────────────
+// â”€â”€â”€ Profile  GET /users/profile  PUT /users/profile â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 export interface UserProfile {
   id: string; name: string; email: string;
@@ -113,7 +113,7 @@ export const userApi = {
     request<{ success: boolean }>('DELETE', `/users/${id}`, undefined, true),
 };
 
-// ─── Exams  POST /exams  GET /exams  GET /exams/{id} ─────────────────────────
+// â”€â”€â”€ Exams  POST /exams  GET /exams  GET /exams/{id} â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 export interface ExamPayload {
   title: string; description: string; classId: string;
@@ -160,7 +160,7 @@ export const examApi = {
     request<{ success: boolean }>('DELETE', `/exams/${id}`, undefined, true),
 };
 
-// ─── Results  POST /results/submit  GET /results/student/{id} ────────────────
+// â”€â”€â”€ Results  POST /results/submit  GET /results/student/{id} â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 export interface SubmitResultPayload {
   examId: string;
@@ -191,7 +191,7 @@ export const resultApi = {
     request<ResultResponse>('PUT', `/results/${id}/grade`, { grades, feedback }, true),
 };
 
-// ─── Admin  GET /admin/exams  GET /admin/results ──────────────────────────────
+// â”€â”€â”€ Admin  GET /admin/exams  GET /admin/results â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 export const adminApi = {
   /** GET /api/admin/exams */
@@ -207,7 +207,7 @@ export const adminApi = {
     ),
 };
 
-// ─── Reports  GET /reports/exam-performance  GET /reports/pass-fail ──────────
+// â”€â”€â”€ Reports  GET /reports/exam-performance  GET /reports/pass-fail â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 export interface ExamPerformanceReport {
   examId: string; examTitle: string; classId: string; className: string;
@@ -231,7 +231,7 @@ export const reportApi = {
     request<PassFailReport>('GET', '/reports/pass-fail', undefined, true),
 };
 
-// ─── Classes CRUD ─────────────────────────────────────────────────────────────
+// â”€â”€â”€ Classes CRUD â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 export const classApi = {
   getAll: () => request<unknown[]>('GET', '/classes', undefined, true),
@@ -246,7 +246,7 @@ export const classApi = {
     request<unknown>('DELETE', `/classes/${classId}/students/${studentId}`, undefined, true),
 };
 
-// ─── Data (full state load) ───────────────────────────────────────────────────
+// â”€â”€â”€ Data (full state load) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 export interface AllData {
   users: (UserProfile & { password?: string })[];
@@ -263,8 +263,32 @@ export const dataApi = {
   reseed: () => request<{ success: boolean; message: string }>('POST', '/data/reseed', {}, true),
 };
 
-// ─── Endpoint Catalog (rendered in API Docs page) ────────────────────────────
+// â”€â”€â”€ Endpoint Catalog (rendered in API Docs page) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
+export interface ApiDocsVerifyCheck {
+  group: string;
+  method: 'GET' | 'POST' | 'PUT' | 'DELETE' | 'PATCH';
+  path: string;
+  exists: boolean;
+  matchedRoute: string | null;
+  canonicalPath: string;
+  sourceFile: string | null;
+}
+
+export interface ApiDocsVerifyResult {
+  generatedAt: string;
+  summary: {
+    required: number;
+    matched: number;
+    missing: number;
+  };
+  checks: ApiDocsVerifyCheck[];
+}
+
+export const docsApi = {
+  /** GET /api/docs/verify - validates required API endpoints against backend route code */
+  verify: () => request<ApiDocsVerifyResult>('GET', '/docs/verify', undefined, true),
+};
 export type HttpMethod = 'GET' | 'POST' | 'PUT' | 'DELETE' | 'PATCH';
 
 export interface EndpointDoc {
@@ -384,3 +408,4 @@ export const API_ENDPOINTS: EndpointDoc[] = [
     },
   },
 ];
+
