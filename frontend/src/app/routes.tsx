@@ -7,6 +7,7 @@ import { StudentDashboard } from './pages/student/StudentDashboard';
 import { StudentExams } from './pages/student/StudentExams';
 import { StudentResults } from './pages/student/StudentResults';
 import { StudentClasses } from './pages/student/StudentClasses';
+import { StudentProfile } from './pages/student/StudentProfile';
 import { TakeExam } from './pages/student/TakeExam';
 import { ExamTakingPreview } from './pages/student/ExamTakingPreview';
 import { TeacherLayout } from './pages/teacher/TeacherLayout';
@@ -37,6 +38,7 @@ export const router = createBrowserRouter([
       { path: 'exams', Component: StudentExams },
       { path: 'results', Component: StudentResults },
       { path: 'classes', Component: StudentClasses },
+      { path: 'profile', Component: StudentProfile },
       { path: 'take-exam/:examId', Component: TakeExam },
     ],
   },

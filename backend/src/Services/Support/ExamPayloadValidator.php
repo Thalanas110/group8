@@ -165,7 +165,7 @@ final class ExamPayloadValidator
 
             if ($type === 'mcq') {
                 $entry += $this->validateMcqQuestion($question, $position);
-            } elseif (array_key_exists('correctAnswer', $question)) {
+            } else if (array_key_exists('correctAnswer', $question)) {
                 $entry['correctAnswer'] = trim((string) $question['correctAnswer']);
             }
 
