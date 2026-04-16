@@ -56,9 +56,14 @@ final class ResultService
                 continue;
             }
 
+            $encryptedAnswerValue = $this->crypto->encrypt($answerValue);
+            if ($answerValue !== '' && $encryptedAnswerValue === null) {
+                throw new ApiException(500, 'Failed to encrypt exam answer.');
+            }
+
             $entry = [
                 'questionId' => $questionId,
-                'answer' => $answerValue,
+                'answer' => $encryptedAnswerValue ?? '',
             ];
 
             foreach ($exam['questions'] as $question) {
@@ -190,7 +195,7 @@ final class ResultService
 
         $updatedRows = $this->gateway->call('sp_results_grade_update', [
             $submissionId,
-            json_encode($answers, JSON_UNESCAPED_UNICODE),
+            json_encode($this->encryptAnswerPayload($answers), JSON_UNESCAPED_UNICODE),
             $totalScore,
             $percentage,
             $grade,
@@ -205,5 +210,43 @@ final class ResultService
         }
 
         return $this->mapper->mapSubmissionRow($updatedRow);
+    }
+
+    /**
+     * @param array<int, array<string, mixed>> $answers
+     * @return array<int, array<string, mixed>>
+     */
+    private function encryptAnswerPayload(array $answers): array
+    {
+        $result = [];
+        foreach ($answers as $answer) {
+            if (!is_array($answer)) {
+                continue;
+            }
+
+            $questionId = (string) ($answer['questionId'] ?? '');
+            if ($questionId === '') {
+                continue;
+            }
+
+            $plainAnswer = (string) ($answer['answer'] ?? '');
+            $encryptedAnswer = $this->crypto->encrypt($plainAnswer);
+            if ($plainAnswer !== '' && $encryptedAnswer === null) {
+                throw new ApiException(500, 'Failed to encrypt exam answer.');
+            }
+
+            $entry = [
+                'questionId' => $questionId,
+                'answer' => $encryptedAnswer ?? '',
+            ];
+
+            if (array_key_exists('marksAwarded', $answer)) {
+                $entry['marksAwarded'] = (float) $answer['marksAwarded'];
+            }
+
+            $result[] = $entry;
+        }
+
+        return $result;
     }
 }

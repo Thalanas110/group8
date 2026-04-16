@@ -122,9 +122,16 @@ final class ExamMapper
                 continue;
             }
 
+            $rawAnswer = (string) ($answer['answer'] ?? '');
+            $decryptedAnswer = $rawAnswer;
+            if (str_starts_with($rawAnswer, 'gcmv1:')) {
+                $resolved = $this->crypto->decrypt($rawAnswer);
+                $decryptedAnswer = $resolved ?? '[decryption_failed]';
+            }
+
             $entry = [
                 'questionId' => (string) ($answer['questionId'] ?? ''),
-                'answer' => (string) ($answer['answer'] ?? ''),
+                'answer' => $decryptedAnswer,
             ];
 
             if (array_key_exists('marksAwarded', $answer)) {

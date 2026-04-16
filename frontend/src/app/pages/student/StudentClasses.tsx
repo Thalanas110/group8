@@ -20,21 +20,19 @@ export function StudentClasses() {
     c.subject.toLowerCase().includes(search.toLowerCase())
   );
 
-  const handleJoin = (e: React.FormEvent) => {
+  const handleJoin = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!code.trim()) return;
     setJoinError('');
     setJoiningLoading(true);
-    setTimeout(() => {
-      const result = joinClassByCode(code.trim(), currentUser.id);
-      if (result.success) {
-        toast.success('Successfully joined the class!');
-        setCode('');
-      } else {
-        setJoinError(result.error || 'Failed to join class');
-      }
-      setJoiningLoading(false);
-    }, 300);
+    const result = await joinClassByCode(code.trim(), currentUser.id);
+    if (result.success) {
+      toast.success('Successfully joined the class!');
+      setCode('');
+    } else {
+      setJoinError(result.error || 'Failed to join class');
+    }
+    setJoiningLoading(false);
   };
 
   const handleLeave = (classId: string) => {

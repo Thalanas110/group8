@@ -52,7 +52,7 @@ final class AppConfig
             logDbPass: $env->get('LOG_DB_PASS', $env->get('DB_PASS', '')),
             logRetentionDays: $env->getInt('LOG_RETENTION_DAYS', 90),
             jwtSecret: $env->get('APP_JWT_SECRET', 'replace-with-strong-secret'),
-            encryptionKey: $env->get('APP_ENCRYPTION_KEY', 'replace-with-32-byte-key'),
+            encryptionKey: $env->get('APP_ENCRYPTION_KEY', ''),
             tokenTtlSeconds: $env->getInt('AUTH_TOKEN_TTL_SECONDS', 28800),
             allowCorsAll: $env->getBool('CORS_ALLOW_ALL', true),
             seedAdminName: $env->get('SEED_ADMIN_NAME', 'System Administrator'),

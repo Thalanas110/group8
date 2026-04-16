@@ -25,7 +25,7 @@ interface AppContextType {
   deleteClass: (id: string) => void;
   enrollStudent: (classId: string, studentId: string) => { success: boolean; error?: string };
   removeStudentFromClass: (classId: string, studentId: string) => void;
-  joinClassByCode: (code: string, studentId: string) => { success: boolean; error?: string };
+  joinClassByCode: (code: string, studentId: string) => Promise<{ success: boolean; error?: string }>;
   leaveClass: (classId: string, studentId: string) => void;
 
   addExam: (exam: Omit<Exam, 'id' | 'createdAt'>) => Exam;
@@ -228,13 +228,30 @@ export function AppProvider({ children }: { children: ReactNode }) {
     classApi.removeStudent(classId, studentId).catch(err => console.error('removeStudent API error:', err));
   };
 
-  const joinClassByCode = (code: string, studentId: string) => {
-    const cls = classes.find(c => c.code.toUpperCase() === code.toUpperCase());
-    if (!cls) return { success: false, error: 'Class not found. Check the code and try again.' };
-    if (cls.studentIds.includes(studentId)) return { success: false, error: 'You are already enrolled in this class.' };
-    setClasses(prev => prev.map(c => c.id === cls.id ? { ...c, studentIds: [...c.studentIds, studentId] } : c));
-    classApi.join(code).catch(err => console.error('joinClass API error:', err));
-    return { success: true };
+  const joinClassByCode = async (code: string, studentId: string): Promise<{ success: boolean; error?: string }> => {
+    try {
+      const joinedClass = await classApi.join(code) as Class;
+      const joinedStudentIds = Array.isArray(joinedClass.studentIds) ? joinedClass.studentIds : [];
+      const normalizedClass: Class = joinedStudentIds.includes(studentId)
+        ? joinedClass
+        : { ...joinedClass, studentIds: [...joinedStudentIds, studentId] };
+
+      setClasses(prev => {
+        const exists = prev.some(c => c.id === normalizedClass.id);
+        if (!exists) {
+          return [...prev, normalizedClass];
+        }
+
+        return prev.map(c => c.id === normalizedClass.id ? { ...c, ...normalizedClass } : c);
+      });
+      return { success: true };
+    } catch (apiErr) {
+      console.error('joinClass API error:', apiErr);
+      const message = apiErr instanceof Error && apiErr.message.trim() !== ''
+        ? apiErr.message
+        : 'Class not found. Check the code and try again.';
+      return { success: false, error: message };
+    }
   };
 
   const leaveClass = (classId: string, studentId: string) => {

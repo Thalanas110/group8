@@ -10,7 +10,7 @@ use App\Support\Helpers;
 
 $failures = [];
 
-$crypto = new AesGcmCrypto('unit-test-key-for-aes-gcm-32-bytes!');
+$crypto = new AesGcmCrypto('0123456789abcdef0123456789abcdef');
 $plain = 'Sensitive text 123';
 $cipher = $crypto->encrypt($plain);
 $roundTrip = $crypto->decrypt($cipher);
@@ -19,6 +19,10 @@ if (!is_string($cipher) || $cipher === '') {
 }
 if ($roundTrip !== $plain) {
     $failures[] = 'AES-256-GCM decrypt mismatch.';
+}
+
+if (!str_starts_with((string) $cipher, 'gcmv1:')) {
+    $failures[] = 'AES-256-GCM envelope format is invalid.';
 }
 
 $jwt = new JwtService('unit-test-jwt-secret');

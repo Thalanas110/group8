@@ -1,13 +1,70 @@
-﻿# Exam System PHP Backend
+# Exam System PHP Backend
 
 This backend matches the API contract in `frontend/src/app/services/api.ts` and enforces:
 
-- AES-256-GCM encryption for sensitive fields (`department`, `phone`, `bio`, `feedback`)
+- AES-256-GCM encryption for sensitive fields (`department`, `phone`, `bio`, exam answers, `feedback`)
 - strict role-based access control (student/teacher/admin)
 - OOP PHP architecture
-- **stored-routine-only** data access (no inline SQL in PHP)
+- stored-routine-only data access (no inline SQL in PHP)
 - `utf8mb4` database encoding
 - dedicated logging database (`request_logs` + `audit_logs`) with fail-open writes
+
+## Project Compliance Summary
+
+- Runtime: vanilla PHP 8+ (no Laravel/Slim frameworks)
+- API style: REST-style JSON responses with HTTP status codes
+- Database: MySQL/MariaDB
+- Authentication: custom JWT implementation + persisted token sessions
+- Validation: service-layer payload validation with structured API errors
+- Error handling: `ApiException` mapped to correct HTTP status codes
+
+## AES-256-GCM Security Documentation
+
+### Encrypted Sensitive Fields
+
+- `users.department_enc` (`department`)
+- `users.phone_enc` (`phone`)
+- `users.bio_enc` (`bio`)
+- `submissions.answers_json[*].answer` (exam answers, encrypted per answer value)
+- `submissions.feedback_enc` (`feedback`)
+
+Passwords are never encrypted and are always hashed with `password_hash()`.
+
+### Encryption Points (Create/Update)
+
+- `POST /auth/register` -> encrypts `department`
+- `PUT /users/profile` -> encrypts `department`, `phone`, `bio`
+- `POST /users` -> encrypts `department`, `phone`, `bio`
+- `PUT /users/:id` -> encrypts `department`, `phone`, `bio`
+- `POST /results/submit` -> encrypts each `answers[].answer`
+- `PUT /results/:id/grade` -> encrypts `feedback` and re-encrypts each `answers[].answer`
+
+### Decryption Points (Read)
+
+Decryption is centralized in `App\Services\Support\ExamMapper` before returning API responses:
+
+- auth/profile/user reads -> decrypt `department`, `phone`, `bio`
+- result reads -> decrypt `answers[].answer` and `feedback`
+
+### Key Management
+
+- Key source: `APP_ENCRYPTION_KEY` from `backend/.env` (or environment variable)
+- Accepted formats:
+  - raw 32-byte value
+  - `base64:<...>` that decodes to 32 bytes
+  - 64-character hex string
+- Invalid key format/length fails fast during bootstrap.
+- Key is injected via config and not hardcoded inside controllers/services.
+
+### AES-256-GCM Envelope Storage
+
+Each encrypted value stores all required GCM components in one envelope:
+
+- `iv` (12-byte random nonce)
+- `tag` (16-byte authentication tag)
+- ciphertext
+
+Format: `gcmv1:<iv_b64>:<tag_b64>:<cipher_b64>`.
 
 ## Seed Accounts
 
