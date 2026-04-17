@@ -1,14 +1,22 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router';
-import { Clock, FileText, Search, CheckCircle2, AlertCircle, BookOpen, Calendar } from 'lucide-react';
+import { Clock, Search, CheckCircle2, AlertCircle, BookOpen, Calendar, ChevronDown } from 'lucide-react';
 import { useApp } from '../../context/AppContext';
 import { Badge, getStatusBadge } from '../../components/shared/Badge';
+
+type ExamFilter = 'all' | 'available' | 'submitted' | 'graded';
+
+type ExamFilterTab = {
+  key: ExamFilter;
+  label: string;
+  count: number;
+};
 
 export function StudentExams() {
   const { currentUser, classes, exams, getStudentSubmission, getClassById } = useApp();
   const navigate = useNavigate();
   const [search, setSearch] = useState('');
-  const [filter, setFilter] = useState<'all' | 'available' | 'submitted' | 'graded'>('all');
+  const [filter, setFilter] = useState<ExamFilter>('all');
 
   if (!currentUser) return null;
 
@@ -31,7 +39,7 @@ export function StudentExams() {
     return matchSearch;
   });
 
-  const tabs = [
+  const tabs: ExamFilterTab[] = [
     { key: 'all', label: 'All Exams', count: myExams.length },
     { key: 'available', label: 'Available', count: myExams.filter(e => getExamState(e.id) === 'available' && e.status === 'published').length },
     { key: 'submitted', label: 'Submitted', count: myExams.filter(e => getExamState(e.id) === 'submitted').length },
@@ -45,12 +53,34 @@ export function StudentExams() {
         <p className="text-gray-500 mt-0.5 text-sm">View and take exams for your enrolled classes</p>
       </div>
 
-      {/* Tabs */}
-      <div className="flex gap-1 bg-gray-100 p-1 rounded-xl w-fit">
+      {/* Mobile filter */}
+      <div className="sm:hidden">
+        <label htmlFor="exam-filter" className="block text-xs font-semibold uppercase tracking-[0.18em] text-gray-400">
+          Filter Exams
+        </label>
+        <div className="relative mt-2">
+          <select
+            id="exam-filter"
+            value={filter}
+            onChange={e => setFilter(e.target.value as ExamFilter)}
+            className="w-full appearance-none rounded-2xl border border-gray-200 bg-white px-4 py-3 pr-11 text-sm font-medium text-gray-900 shadow-sm focus:outline-none focus:ring-2 focus:ring-gray-900"
+          >
+            {tabs.map(tab => (
+              <option key={tab.key} value={tab.key}>
+                {tab.label} ({tab.count})
+              </option>
+            ))}
+          </select>
+          <ChevronDown className="pointer-events-none absolute right-4 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
+        </div>
+      </div>
+
+      {/* Desktop tabs */}
+      <div className="hidden sm:flex gap-1 bg-gray-100 p-1 rounded-xl w-fit">
         {tabs.map(tab => (
           <button
             key={tab.key}
-            onClick={() => setFilter(tab.key as any)}
+            onClick={() => setFilter(tab.key)}
             className={`px-4 py-1.5 rounded-lg text-sm font-medium transition-all ${filter === tab.key ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}
           >
             {tab.label}
