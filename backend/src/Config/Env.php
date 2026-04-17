@@ -58,4 +58,16 @@ final class Env
         $value = strtolower($this->get($key, $default ? 'true' : 'false'));
         return in_array($value, ['1', 'true', 'yes', 'on'], true);
     }
+
+    /**
+     * @throws \RuntimeException if the variable is not set or empty
+     */
+    public function require(string $key): string
+    {
+        $value = $this->get($key);
+        if ($value === '') {
+            throw new \RuntimeException("Required environment variable '{$key}' is not set.");
+        }
+        return $value;
+    }
 }

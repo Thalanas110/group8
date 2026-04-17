@@ -1,10 +1,11 @@
 import React, { useState } from 'react';
-import { Plus, Edit2, Trash2, Eye, FileText, Clock, BookOpen, ChevronDown, ChevronUp, X, PlusCircle } from 'lucide-react';
+import { Plus, Edit2, Trash2, Eye, FileText, Clock, BookOpen, ChevronDown, ChevronUp, X, PlusCircle, ShieldAlert } from 'lucide-react';
 import { useApp } from '../../context/AppContext';
 import { Badge, getStatusBadge } from '../../components/shared/Badge';
 import { Modal, ConfirmDialog } from '../../components/shared/Modal';
 import { Exam, Question, ExamStatus } from '../../data/types';
 import { toast } from 'sonner';
+import { violationApi, ViolationRecord } from '../../services/api';
 
 type ExamFormData = Omit<Exam, 'id' | 'createdAt' | 'teacherId'>;
 const blankQuestion = (): Question => ({
@@ -102,6 +103,25 @@ export function TeacherExams() {
   const [deleteTarget, setDeleteTarget] = useState<string | null>(null);
   const [expandedExam, setExpandedExam] = useState<string | null>(null);
   const [filter, setFilter] = useState<'all' | ExamStatus>('all');
+
+  // Anti-cheat violations viewer state
+  const [violationsExam, setViolationsExam] = useState<Exam | null>(null);
+  const [violations, setViolations] = useState<ViolationRecord[]>([]);
+  const [violationsLoading, setViolationsLoading] = useState(false);
+
+  const openViolations = async (exam: Exam) => {
+    setViolationsExam(exam);
+    setViolations([]);
+    setViolationsLoading(true);
+    try {
+      const data = await violationApi.listByExam(exam.id);
+      setViolations(data);
+    } catch {
+      toast.error('Could not load violations for this exam.');
+    } finally {
+      setViolationsLoading(false);
+    }
+  };
 
   const [form, setForm] = useState<ExamFormData>({
     title: '', description: '', classId: '', duration: 60, totalMarks: 100, passingMarks: 50,
@@ -248,6 +268,13 @@ export function TeacherExams() {
                   <div className="flex items-center gap-2 flex-shrink-0">
                     <button onClick={() => setExpandedExam(isExpanded ? null : exam.id)} className="p-2 rounded-lg hover:bg-gray-100 text-gray-400">
                       {isExpanded ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
+                    </button>
+                    <button
+                      onClick={() => openViolations(exam)}
+                      title="View anti-cheat violations"
+                      className="p-2 rounded-lg hover:bg-red-50 text-gray-500 hover:text-red-600 transition-colors"
+                    >
+                      <ShieldAlert className="w-4 h-4" />
                     </button>
                     <button onClick={() => openEdit(exam)} className="p-2 rounded-lg hover:bg-gray-100 text-gray-500">
                       <Edit2 className="w-4 h-4" />
@@ -450,6 +477,77 @@ export function TeacherExams() {
         setDeleteTarget(null);
       }}
         title="Delete Exam" message="Are you sure you want to delete this exam? All submissions will also be removed. This action cannot be undone." confirmLabel="Delete Exam" />
+
+      {/* ── Anti-Cheat Violations Modal ─────────────────────────────────────── */}
+      <Modal
+        isOpen={!!violationsExam}
+        onClose={() => setViolationsExam(null)}
+        title={`Anti-Cheat Violations — ${violationsExam?.title ?? ''}`}
+        size="xl"
+      >
+        <div>
+          {violationsLoading ? (
+            <div className="py-10 text-center text-gray-400 text-sm">Loading violations…</div>
+          ) : violations.length === 0 ? (
+            <div className="py-10 text-center">
+              <ShieldAlert className="w-10 h-10 mx-auto text-gray-300 mb-3" />
+              <div className="text-gray-500 font-medium">No violations recorded</div>
+              <div className="text-gray-400 text-sm mt-1">All students behaved during this exam.</div>
+            </div>
+          ) : (
+            <div className="space-y-3">
+              <p className="text-xs text-gray-500">
+                {violations.length} violation event(s) recorded across{' '}
+                {new Set(violations.map(v => v.student_id)).size} student(s).
+              </p>
+              <div className="overflow-x-auto rounded-xl border border-gray-200">
+                <table className="w-full text-xs">
+                  <thead>
+                    <tr className="bg-gray-50 border-b border-gray-200">
+                      <th className="px-3 py-2.5 text-left font-semibold text-gray-600">#</th>
+                      <th className="px-3 py-2.5 text-left font-semibold text-gray-600">Student ID</th>
+                      <th className="px-3 py-2.5 text-left font-semibold text-gray-600">Violation #</th>
+                      <th className="px-3 py-2.5 text-left font-semibold text-gray-600">Type</th>
+                      <th className="px-3 py-2.5 text-left font-semibold text-gray-600">Details</th>
+                      <th className="px-3 py-2.5 text-left font-semibold text-gray-600">Occurred At</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {violations.map((v, i) => (
+                      <tr key={v.id} className="border-b border-gray-100 last:border-0 hover:bg-gray-50">
+                        <td className="px-3 py-2.5 text-gray-500">{i + 1}</td>
+                        <td className="px-3 py-2.5 font-mono text-gray-700 truncate max-w-[120px]" title={v.student_id}>
+                          {v.student_id.slice(0, 8)}…
+                        </td>
+                        <td className="px-3 py-2.5 text-center">
+                          <span className="bg-red-100 text-red-700 font-semibold px-2 py-0.5 rounded-full">
+                            {v.violation_no}
+                          </span>
+                        </td>
+                        <td className="px-3 py-2.5">
+                          <span className={`px-2 py-0.5 rounded-full font-medium ${
+                            v.violation_type === 'auto_submitted'
+                              ? 'bg-red-100 text-red-700'
+                              : v.violation_type === 'window_blur'
+                              ? 'bg-orange-100 text-orange-700'
+                              : 'bg-yellow-100 text-yellow-700'
+                          }`}>
+                            {v.violation_type.replace('_', ' ')}
+                          </span>
+                        </td>
+                        <td className="px-3 py-2.5 text-gray-500 truncate max-w-[200px]">{v.details ?? '—'}</td>
+                        <td className="px-3 py-2.5 text-gray-400 whitespace-nowrap">
+                          {new Date(v.occurred_at).toLocaleString()}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          )}
+        </div>
+      </Modal>
     </div>
   );
 }

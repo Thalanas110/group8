@@ -1,9 +1,11 @@
 import React, { useState } from 'react';
-import { CheckSquare, Clock, ChevronRight, Send, CheckCircle2 } from 'lucide-react';
+import { CheckSquare, Clock, ChevronRight, Send, CheckCircle2, ShieldAlert } from 'lucide-react';
 import { useApp } from '../../context/AppContext';
 import { Badge, getGradeBadge, getStatusBadge } from '../../components/shared/Badge';
 import { Submission, Exam } from '../../data/types';
+import { Modal } from '../../components/shared/Modal';
 import { toast } from 'sonner';
+import { violationApi, ViolationRecord } from '../../services/api';
 
 export function TeacherGrade() {
   const { currentUser, exams, submissions, getUserById, gradeSubmission } = useApp();
@@ -13,6 +15,25 @@ export function TeacherGrade() {
   const [feedback, setFeedback] = useState('');
   const [submittingGrade, setSubmittingGrade] = useState(false);
   const [filter, setFilter] = useState<'all' | 'pending' | 'graded'>('pending');
+
+  // Anti-cheat violations
+  const [violationsModal, setViolationsModal] = useState<{ examId: string; studentId: string; examTitle: string; studentName: string } | null>(null);
+  const [violations, setViolations] = useState<ViolationRecord[]>([]);
+  const [violationsLoading, setViolationsLoading] = useState(false);
+
+  const openViolations = async (examId: string, studentId: string, examTitle: string, studentName: string) => {
+    setViolationsModal({ examId, studentId, examTitle, studentName });
+    setViolations([]);
+    setViolationsLoading(true);
+    try {
+      const all = await violationApi.listByExam(examId);
+      setViolations(all.filter(v => v.student_id === studentId));
+    } catch {
+      toast.error('Could not load violations.');
+    } finally {
+      setViolationsLoading(false);
+    }
+  };
 
   if (!currentUser) return null;
 
@@ -60,10 +81,70 @@ export function TeacherGrade() {
   const pendingCount = allSubs.filter(s => s.status === 'submitted').length;
   const totalScore = Object.values(gradeInputs).reduce((s, v) => s + (v || 0), 0);
 
+  const violationsModalEl = (
+    <Modal
+      isOpen={!!violationsModal}
+      onClose={() => setViolationsModal(null)}
+      title={`Violations — ${violationsModal?.studentName ?? ''} · ${violationsModal?.examTitle ?? ''}`}
+      size="xl"
+    >
+      <div>
+        {violationsLoading ? (
+          <div className="py-10 text-center text-gray-400 text-sm">Loading violations…</div>
+        ) : violations.length === 0 ? (
+          <div className="py-10 text-center">
+            <ShieldAlert className="w-10 h-10 mx-auto text-gray-300 mb-3" />
+            <div className="text-gray-500 font-medium">No violations recorded</div>
+            <div className="text-gray-400 text-sm mt-1">This student had no anti-cheat violations.</div>
+          </div>
+        ) : (
+          <div className="space-y-3">
+            <p className="text-xs text-gray-500">{violations.length} violation event(s) recorded for this student.</p>
+            <div className="overflow-x-auto rounded-xl border border-gray-200">
+              <table className="w-full text-xs">
+                <thead>
+                  <tr className="bg-gray-50 border-b border-gray-200">
+                    <th className="px-3 py-2.5 text-left font-semibold text-gray-600">#</th>
+                    <th className="px-3 py-2.5 text-left font-semibold text-gray-600">Violation #</th>
+                    <th className="px-3 py-2.5 text-left font-semibold text-gray-600">Type</th>
+                    <th className="px-3 py-2.5 text-left font-semibold text-gray-600">Details</th>
+                    <th className="px-3 py-2.5 text-left font-semibold text-gray-600">Occurred At</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {violations.map((v, i) => (
+                    <tr key={v.id} className="border-b border-gray-100 last:border-0 hover:bg-gray-50">
+                      <td className="px-3 py-2.5 text-gray-500">{i + 1}</td>
+                      <td className="px-3 py-2.5 text-center">
+                        <span className="bg-red-100 text-red-700 font-semibold px-2 py-0.5 rounded-full">{v.violation_no}</span>
+                      </td>
+                      <td className="px-3 py-2.5">
+                        <span className={`px-2 py-0.5 rounded-full font-medium ${
+                          v.violation_type === 'auto_submitted' ? 'bg-red-100 text-red-700'
+                          : v.violation_type === 'window_blur' ? 'bg-orange-100 text-orange-700'
+                          : 'bg-yellow-100 text-yellow-700'
+                        }`}>
+                          {v.violation_type.replace('_', ' ')}
+                        </span>
+                      </td>
+                      <td className="px-3 py-2.5 text-gray-500 truncate max-w-[200px]">{v.details ?? '—'}</td>
+                      <td className="px-3 py-2.5 text-gray-400 whitespace-nowrap">{new Date(v.occurred_at).toLocaleString()}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        )}
+      </div>
+    </Modal>
+  );
+
   // ── Grading view ────────────────────────────────────────────────────────────
   if (selectedSub && subToGrade && subExam && student) {
     return (
-      <div className="space-y-6">
+      <>
+        <div className="space-y-6">
         <div className="flex items-center gap-3">
           <button onClick={() => setSelectedSub(null)} className="p-2 rounded-xl border border-gray-200 hover:bg-gray-50 text-gray-600">
             <ChevronRight className="w-4 h-4 rotate-180" />
@@ -88,6 +169,15 @@ export function TeacherGrade() {
             </div>
           ))}
         </div>
+
+        {/* Anti-cheat shortcut */}
+        <button
+          onClick={() => openViolations(subExam.id, subToGrade.studentId, subExam.title, student.name)}
+          className="flex items-center gap-2 px-4 py-2.5 bg-red-50 border border-red-200 rounded-xl text-sm font-medium text-red-700 hover:bg-red-100 transition-colors w-fit"
+        >
+          <ShieldAlert className="w-4 h-4" />
+          View Anti-Cheat Violations for this Student
+        </button>
 
         {/* Questions */}
         <div className="space-y-4">
@@ -164,11 +254,14 @@ export function TeacherGrade() {
           </button>
         </div>
       </div>
+      {violationsModalEl}
+    </>
     );
   }
 
   // ── List view ───────────────────────────────────────────────────────────────
   return (
+    <>
     <div className="space-y-6">
       <div>
         <h1 className="text-xl font-semibold text-gray-900">Grade Exams</h1>
@@ -252,12 +345,23 @@ export function TeacherGrade() {
                       ) : <span className="text-gray-300">—</span>}
                     </td>
                     <td className="px-5 py-3.5 text-right">
-                      {exam && (
-                        <button onClick={() => openGrade(sub, exam)}
-                          className={`text-xs px-3 py-1.5 rounded-lg font-medium transition-colors ${sub.status === 'submitted' ? 'bg-gray-900 text-white hover:bg-gray-700' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'}`}>
-                          {sub.status === 'submitted' ? 'Grade' : 'Review'}
-                        </button>
-                      )}
+                      <div className="flex items-center justify-end gap-2">
+                        {exam && st && (
+                          <button
+                            onClick={() => openViolations(exam.id, sub.studentId, exam.title, st.name)}
+                            title="View anti-cheat violations"
+                            className="p-1.5 rounded-lg hover:bg-red-50 text-gray-400 hover:text-red-600 transition-colors"
+                          >
+                            <ShieldAlert className="w-4 h-4" />
+                          </button>
+                        )}
+                        {exam && (
+                          <button onClick={() => openGrade(sub, exam)}
+                            className={`text-xs px-3 py-1.5 rounded-lg font-medium transition-colors ${sub.status === 'submitted' ? 'bg-gray-900 text-white hover:bg-gray-700' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'}`}>
+                            {sub.status === 'submitted' ? 'Grade' : 'Review'}
+                          </button>
+                        )}
+                      </div>
                     </td>
                   </tr>
                 );
@@ -267,5 +371,7 @@ export function TeacherGrade() {
         </div>
       )}
     </div>
+    {violationsModalEl}
+    </>
   );
 }

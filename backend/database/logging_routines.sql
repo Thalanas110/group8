@@ -51,6 +51,27 @@ DROP PROCEDURE IF EXISTS sp_log_request_create;
 DROP PROCEDURE IF EXISTS sp_log_audit_create;
 DROP PROCEDURE IF EXISTS sp_log_retention_purge;
 
+-- ── Exam Anti-Cheat Violations ────────────────────────────────────────────────
+-- Declared here (before the stored procs) so sp_log_retention_purge can safely
+-- reference the table at CREATE time on strict MySQL configurations.
+
+CREATE TABLE IF NOT EXISTS exam_violations (
+  id            BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+  exam_id       CHAR(36)        NOT NULL,
+  student_id    CHAR(36)        NOT NULL,
+  violation_no  TINYINT UNSIGNED NOT NULL COMMENT 'Ordinal counter for this student+exam (1, 2, 3...)',
+  violation_type VARCHAR(64)    NOT NULL DEFAULT 'tab_switch' COMMENT 'tab_switch | window_blur | auto_submitted',
+  details       VARCHAR(512)    NULL,
+  occurred_at   DATETIME        NOT NULL DEFAULT UTC_TIMESTAMP(),
+  PRIMARY KEY (id),
+  KEY idx_ev_exam_id      (exam_id),
+  KEY idx_ev_student_id   (student_id),
+  KEY idx_ev_occurred_at  (occurred_at)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+DROP PROCEDURE IF EXISTS sp_violation_create;
+DROP PROCEDURE IF EXISTS sp_violation_list_by_exam;
+
 DELIMITER $$
 
 CREATE PROCEDURE sp_log_request_create(
@@ -143,6 +164,10 @@ BEGIN
 
   DELETE FROM audit_logs
    WHERE created_at < (UTC_TIMESTAMP() - INTERVAL v_retention_days DAY);
+
+  DELETE FROM exam_violations
+   WHERE occurred_at < (UTC_TIMESTAMP() - INTERVAL v_retention_days DAY);
 END$$
 
 DELIMITER ;
+

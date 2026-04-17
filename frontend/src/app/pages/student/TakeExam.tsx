@@ -11,13 +11,16 @@ import {
   BookOpen,
   BarChart2,
   Save,
+  ShieldAlert,
 } from 'lucide-react';
 import { useApp } from '../../context/AppContext';
 import { Answer } from '../../data/types';
 import { ConfirmDialog } from '../../components/shared/Modal';
 import { toast } from 'sonner';
+import { violationApi, ViolationType } from '../../services/api';
 
 const OPTION_LETTERS = ['A', 'B', 'C', 'D', 'E'];
+const MAX_TAB_SWITCHES = 3;
 
 export function TakeExam() {
   const { examId } = useParams<{ examId: string }>();
@@ -37,10 +40,101 @@ export function TakeExam() {
   const [lastSaved, setLastSaved] = useState<Date | null>(null);
   const autoSaveRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
+  // Anti-cheat state
+  const [tabSwitchCount, setTabSwitchCount] = useState(0);
+  const [showViolationWarning, setShowViolationWarning] = useState(false);
+  const [autoSubmitReason, setAutoSubmitReason] = useState<string | null>(null);
+  const tabSwitchCountRef = useRef(0);
+  const examStartTimeRef = useRef<number | null>(null);
+  const VIOLATION_COOLDOWN_MS = 10_000; // 10 s grace period after exam starts
+
   useEffect(() => {
     if (!currentUser) { navigate('/'); return; }
     if (!exam) { navigate('/student/exams'); return; }
   }, [exam, currentUser, navigate]);
+
+  // Anti-cheat: detect tab switching and window blur
+  useEffect(() => {
+    if (!started || submitted) return;
+
+    // Record when the exam actually started so the cooldown is relative to it
+    examStartTimeRef.current = Date.now();
+
+    const handleViolation = (type: ViolationType = 'tab_switch') => {
+      // Ignore events fired within the first 10 s (e.g. window blur from clicking Start)
+      if (examStartTimeRef.current !== null && Date.now() - examStartTimeRef.current < VIOLATION_COOLDOWN_MS) {
+        return;
+      }
+      tabSwitchCountRef.current += 1;
+      const count = tabSwitchCountRef.current;
+      setTabSwitchCount(count);
+
+      // Report to backend (fire-and-forget; do not block the UI)
+      if (examId) {
+        violationApi
+          .report(examId, type, `Violation #${count} detected during exam`)
+          .catch(() => { /* fail-open */ });
+      }
+
+      if (count >= MAX_TAB_SWITCHES) {
+        setAutoSubmitReason(
+          `Your exam has been automatically submitted because you left the exam window ${MAX_TAB_SWITCHES} time(s).`
+        );
+      } else {
+        setShowViolationWarning(true);
+      }
+    };
+
+    const handleVisibilityChange = () => {
+      if (document.hidden) handleViolation('tab_switch');
+    };
+
+    const handleBlur = () => {
+      // Only count blur if the document itself is still visible (e.g. alt-tab, not minimize)
+      if (!document.hidden) handleViolation('window_blur');
+    };
+
+    const handleContextMenu = (e: MouseEvent) => {
+      e.preventDefault();
+      handleViolation('right_click');
+    };
+
+    const handleKeyDown = (e: KeyboardEvent) => {
+      // Block common cheating shortcuts
+      if (
+        (e.ctrlKey && ['c', 'v', 'a', 'u', 's', 'p'].includes(e.key.toLowerCase())) ||
+        e.key === 'F12' ||
+        (e.ctrlKey && e.shiftKey && ['i', 'j', 'c'].includes(e.key.toLowerCase())) ||
+        (e.altKey && e.key === 'Tab')
+      ) {
+        e.preventDefault();
+      }
+    };
+
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    window.addEventListener('blur', handleBlur);
+    document.addEventListener('contextmenu', handleContextMenu);
+    document.addEventListener('keydown', handleKeyDown);
+
+    return () => {
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+      window.removeEventListener('blur', handleBlur);
+      document.removeEventListener('contextmenu', handleContextMenu);
+      document.removeEventListener('keydown', handleKeyDown);
+    };
+  }, [started, submitted]);
+
+  // Auto-submit when max violations reached
+  useEffect(() => {
+    if (autoSubmitReason && !submitted) {
+      if (examId) {
+        violationApi
+          .report(examId, 'auto_submitted', `Exam auto-submitted after ${MAX_TAB_SWITCHES} violations`)
+          .catch(() => { /* fail-open */ });
+      }
+      handleSubmit();
+    }
+  }, [autoSubmitReason, submitted]);
 
   // Auto-save simulation
   useEffect(() => {
@@ -170,10 +264,17 @@ export function TakeExam() {
             ))}
           </div>
 
-          <div className="bg-gray-50 border border-gray-200 rounded-xl p-4 mb-6 flex items-start gap-3">
+          <div className="bg-gray-50 border border-gray-200 rounded-xl p-4 mb-3 flex items-start gap-3">
             <AlertTriangle className="w-5 h-5 text-gray-500 flex-shrink-0 mt-0.5" />
             <div className="text-sm text-gray-600 leading-relaxed">
               <strong className="text-gray-900">Important:</strong> Once started, the timer cannot be paused. Ensure you have a stable connection and enough time before beginning.
+            </div>
+          </div>
+
+          <div className="bg-red-50 border border-red-200 rounded-xl p-4 mb-6 flex items-start gap-3">
+            <ShieldAlert className="w-5 h-5 text-red-500 flex-shrink-0 mt-0.5" />
+            <div className="text-sm text-red-700 leading-relaxed">
+              <strong className="text-red-900">Anti-Cheat Policy:</strong> Switching tabs, minimising the window, or leaving this page will be recorded as a violation. After {MAX_TAB_SWITCHES} violation(s) your exam will be automatically submitted.
             </div>
           </div>
 
@@ -213,6 +314,43 @@ export function TakeExam() {
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col">
 
+      {/* ── Violation Warning Overlay ──────────────────────────────────────────── */}
+      {showViolationWarning && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm">
+          <div className="bg-white rounded-2xl border border-red-200 p-8 max-w-md w-full mx-4 shadow-xl text-center">
+            <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
+              <ShieldAlert className="w-9 h-9 text-red-600" />
+            </div>
+            <h2 className="text-xl font-bold text-gray-900 mb-2">Tab Switch Detected!</h2>
+            <p className="text-gray-600 text-sm mb-1">
+              You left the exam window. This has been recorded as a violation.
+            </p>
+            <p className="text-red-600 text-sm font-semibold mb-6">
+              Violation {tabSwitchCount} of {MAX_TAB_SWITCHES} &mdash; your exam will be auto-submitted on violation {MAX_TAB_SWITCHES}.
+            </p>
+            <button
+              onClick={() => setShowViolationWarning(false)}
+              className="w-full bg-gray-900 text-white py-2.5 rounded-xl text-sm font-semibold hover:bg-gray-700 transition-colors"
+            >
+              I Understand &mdash; Return to Exam
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* ── Auto-Submit Notification ───────────────────────────────────────────── */}
+      {autoSubmitReason && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm">
+          <div className="bg-white rounded-2xl border border-red-300 p-8 max-w-md w-full mx-4 shadow-xl text-center">
+            <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
+              <ShieldAlert className="w-9 h-9 text-red-600" />
+            </div>
+            <h2 className="text-xl font-bold text-gray-900 mb-2">Exam Auto-Submitted</h2>
+            <p className="text-gray-600 text-sm">{autoSubmitReason}</p>
+          </div>
+        </div>
+      )}
+
       {/* ── Top Header ─────────────────────────────────────────────────────────── */}
       <div className="bg-white border-b border-gray-200 sticky top-0 z-20 shadow-sm">
         {/* Progress bar */}
@@ -241,6 +379,14 @@ export function TakeExam() {
           </div>
 
           <div className="flex items-center gap-2 flex-shrink-0">
+            {/* Violation badge */}
+            {tabSwitchCount > 0 && (
+              <div className="flex items-center gap-1.5 px-2.5 py-1.5 bg-red-50 border border-red-200 rounded-xl text-xs font-semibold text-red-700">
+                <ShieldAlert className="w-3.5 h-3.5" />
+                <span>{tabSwitchCount}/{MAX_TAB_SWITCHES} violations</span>
+              </div>
+            )}
+
             {/* Auto-save indicator */}
             {lastSaved && (
               <div className="hidden sm:flex items-center gap-1.5 text-xs text-gray-400">

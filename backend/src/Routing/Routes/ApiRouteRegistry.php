@@ -17,6 +17,7 @@ final class ApiRouteRegistry
         UserRoutes::register($router, $container->usersController);
         ClassRoutes::register($router, $container->classesController);
         ExamRoutes::register($router, $container->examsController);
+        ExamViolationRoutes::register($router, $container->examViolationsController);
         ResultRoutes::register($router, $container->resultsController);
         AdminRoutes::register($router, $container->adminController);
         ReportRoutes::register($router, $container->reportsController);

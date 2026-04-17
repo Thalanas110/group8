@@ -10,6 +10,7 @@ use App\Controllers\AuthController;
 use App\Controllers\ClassesController;
 use App\Controllers\DataController;
 use App\Controllers\DocsController;
+use App\Controllers\ExamViolationsController;
 use App\Controllers\ExamsController;
 use App\Controllers\HealthController;
 use App\Controllers\ProfileController;
@@ -19,6 +20,7 @@ use App\Controllers\UsersController;
 use App\Database\LogDbConnection;
 use App\Database\RoutineGateway;
 use App\Logging\AuditLogService;
+use App\Logging\ExamViolationService;
 use App\Logging\LogRetentionService;
 use App\Logging\RequestLogService;
 use App\Security\AesGcmCrypto;
@@ -57,6 +59,7 @@ final class ServiceContainer
         public ReportsController $reportsController,
         public DataController $dataController,
         public DocsController $docsController,
+        public ExamViolationsController $examViolationsController,
     ) {
     }
 
@@ -152,6 +155,9 @@ final class ServiceContainer
             reportsController: new ReportsController($reportService),
             dataController: new DataController($dataService, $seedService),
             docsController: new DocsController($docsVerificationService),
+            examViolationsController: new ExamViolationsController(
+                new ExamViolationService($logGateway),
+            ),
         );
     }
 }

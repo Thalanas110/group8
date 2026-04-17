@@ -289,6 +289,37 @@ export const docsApi = {
   /** GET /api/docs/verify - validates required API endpoints against backend route code */
   verify: () => request<ApiDocsVerifyResult>('GET', '/docs/verify', undefined, true),
 };
+
+// ─── Anti-Cheat Violations ────────────────────────────────────────────────────
+
+export type ViolationType = 'tab_switch' | 'window_blur' | 'right_click' | 'auto_submitted';
+
+export interface ViolationRecord {
+  id: number;
+  exam_id: string;
+  student_id: string;
+  violation_no: number;
+  violation_type: ViolationType;
+  details: string | null;
+  occurred_at: string;
+}
+
+export const violationApi = {
+  /**
+   * POST /api/exams/:examId/violations
+   * Student reports a single anti-cheat violation.
+   */
+  report: (examId: string, type: ViolationType, details?: string) =>
+    request<ViolationRecord>('POST', `/exams/${examId}/violations`, { type, details }, true),
+
+  /**
+   * GET /api/exams/:examId/violations
+   * Teacher / admin retrieves all violations for an exam.
+   */
+  listByExam: (examId: string) =>
+    request<ViolationRecord[]>('GET', `/exams/${examId}/violations`, undefined, true),
+};
+
 export type HttpMethod = 'GET' | 'POST' | 'PUT' | 'DELETE' | 'PATCH';
 
 export interface EndpointDoc {
