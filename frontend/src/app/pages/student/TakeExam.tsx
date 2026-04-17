@@ -18,6 +18,10 @@ import { Answer } from '../../data/types';
 import { ConfirmDialog } from '../../components/shared/Modal';
 import { toast } from 'sonner';
 import { violationApi, ViolationType } from '../../services/api';
+import {
+  CreateExamFocusViolationState,
+  ResolveExamFocusViolation,
+} from './ExamFocusViolationState';
 
 const OPTION_LETTERS = ['A', 'B', 'C', 'D', 'E'];
 const MAX_TAB_SWITCHES = 3;
@@ -46,6 +50,7 @@ export function TakeExam() {
   const [autoSubmitReason, setAutoSubmitReason] = useState<string | null>(null);
   const tabSwitchCountRef = useRef(0);
   const examStartTimeRef = useRef<number | null>(null);
+  const focusViolationStateRef = useRef(CreateExamFocusViolationState());
   const VIOLATION_COOLDOWN_MS = 10_000; // 10 s grace period after exam starts
 
   useEffect(() => {
@@ -59,6 +64,7 @@ export function TakeExam() {
 
     // Record when the exam actually started so the cooldown is relative to it
     examStartTimeRef.current = Date.now();
+    focusViolationStateRef.current = CreateExamFocusViolationState();
 
     const handleViolation = (type: ViolationType = 'tab_switch') => {
       // Ignore events fired within the first 10 s (e.g. window blur from clicking Start)
@@ -85,13 +91,25 @@ export function TakeExam() {
       }
     };
 
+    const applyFocusViolationEvent = (event: { type: 'blur' | 'focus' | 'visibilitychange'; hidden: boolean }) => {
+      const outcome = ResolveExamFocusViolation(focusViolationStateRef.current, event);
+      focusViolationStateRef.current = outcome.nextState;
+
+      if (outcome.violationType) {
+        handleViolation(outcome.violationType);
+      }
+    };
+
     const handleVisibilityChange = () => {
-      if (document.hidden) handleViolation('tab_switch');
+      applyFocusViolationEvent({ type: 'visibilitychange', hidden: document.hidden });
     };
 
     const handleBlur = () => {
-      // Only count blur if the document itself is still visible (e.g. alt-tab, not minimize)
-      if (!document.hidden) handleViolation('window_blur');
+      applyFocusViolationEvent({ type: 'blur', hidden: document.hidden });
+    };
+
+    const handleFocus = () => {
+      applyFocusViolationEvent({ type: 'focus', hidden: document.hidden });
     };
 
     const handleContextMenu = (e: MouseEvent) => {
@@ -113,12 +131,14 @@ export function TakeExam() {
 
     document.addEventListener('visibilitychange', handleVisibilityChange);
     window.addEventListener('blur', handleBlur);
+    window.addEventListener('focus', handleFocus);
     document.addEventListener('contextmenu', handleContextMenu);
     document.addEventListener('keydown', handleKeyDown);
 
     return () => {
       document.removeEventListener('visibilitychange', handleVisibilityChange);
       window.removeEventListener('blur', handleBlur);
+      window.removeEventListener('focus', handleFocus);
       document.removeEventListener('contextmenu', handleContextMenu);
       document.removeEventListener('keydown', handleKeyDown);
     };
