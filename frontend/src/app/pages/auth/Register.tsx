@@ -116,7 +116,6 @@ export function Register() {
               >
                 <option value="student">Student</option>
                 <option value="teacher">Teacher</option>
-                <option value="admin">Administrator</option>
               </select>
             </div>
             <div>
