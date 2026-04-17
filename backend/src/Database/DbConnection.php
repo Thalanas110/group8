@@ -20,7 +20,7 @@ final class DbConnection
         if ($this->pdo instanceof PDO) {
             return $this->pdo;
         }
-
+        
         $dsn = sprintf(
             'mysql:host=%s;port=%d;dbname=%s;charset=utf8mb4',
             $this->config->dbHost,
