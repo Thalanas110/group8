@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { NavLink, Outlet, useNavigate } from 'react-router';
 import { LucideIcon, BookOpen, LogOut, Menu, X, ChevronRight } from 'lucide-react';
 import { useApp } from '../../context/AppContext';
+import { ConfirmDialog } from './Modal';
 
 export interface NavItem {
   path: string;
@@ -18,6 +19,7 @@ export function DashboardLayout({ navItems, roleLabel }: DashboardLayoutProps) {
   const { currentUser, logout } = useApp();
   const navigate = useNavigate();
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [confirmSignOut, setConfirmSignOut] = useState(false);
 
   const handleLogout = () => {
     logout();
@@ -80,7 +82,7 @@ export function DashboardLayout({ navItems, roleLabel }: DashboardLayoutProps) {
         </div>
         <button
           type="button"
-          onClick={handleLogout}
+          onClick={() => setConfirmSignOut(true)}
           className="w-full flex items-center justify-center gap-2 px-3 py-2.5 text-sm font-semibold text-gray-700 hover:bg-gray-100 rounded-xl transition-colors"
         >
           <LogOut className="w-4 h-4" />
@@ -150,6 +152,15 @@ export function DashboardLayout({ navItems, roleLabel }: DashboardLayoutProps) {
           </div>
         </main>
       </div>
+
+      <ConfirmDialog
+        isOpen={confirmSignOut}
+        onClose={() => setConfirmSignOut(false)}
+        onConfirm={handleLogout}
+        title="Sign out"
+        message="Are you sure you want to sign out of your account?"
+        confirmLabel="Sign out"
+      />
     </div>
   );
 }

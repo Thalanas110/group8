@@ -27,6 +27,7 @@ import {
   type HttpMethod,
 } from '../../services/api';
 import { toast } from 'sonner';
+import { ConfirmDialog } from '../../components/shared/Modal';
 
 type VerifyState = 'idle' | 'loading' | 'verified' | 'error';
 
@@ -131,6 +132,7 @@ function VerificationBadge({ check }: { check?: ApiDocsVerifyCheck }) {
 
 function PhpBackendPanel() {
   const [reseeding, setReseeding] = useState(false);
+  const [confirmReseed, setConfirmReseed] = useState(false);
 
   const handleReseed = async () => {
     setReseeding(true);
@@ -167,13 +169,22 @@ function PhpBackendPanel() {
 
         <div className="flex flex-wrap items-center gap-3">
           <button
-            onClick={handleReseed}
+            onClick={() => setConfirmReseed(true)}
             disabled={reseeding}
             className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-xl text-sm font-medium hover:bg-blue-700 disabled:opacity-60 transition-colors"
           >
             <RefreshCw className={`w-3.5 h-3.5 ${reseeding ? 'animate-spin' : ''}`} />
             {reseeding ? 'Reseeding...' : 'Reset Database to Seed Data'}
           </button>
+
+          <ConfirmDialog
+            isOpen={confirmReseed}
+            onClose={() => setConfirmReseed(false)}
+            onConfirm={handleReseed}
+            title="Reset Database"
+            message="This will wipe all current data and restore the database to its seed state. This action cannot be undone. Are you sure?"
+            confirmLabel="Reset Database"
+          />
           <div className="text-xs text-gray-500">
             Runs <code className="bg-gray-100 px-1 rounded font-mono">POST /api/data/reseed</code> on the PHP backend.
           </div>
