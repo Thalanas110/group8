@@ -24,6 +24,7 @@ $validPayload = [
         [
             'text' => 'What is 2 + 2?',
             'type' => 'mcq',
+            'topic' => 'Arithmetic',
             'options' => ['3', '4'],
             'correctAnswer' => '4',
             'marks' => 5,
@@ -37,7 +38,10 @@ $validPayload = [
 ];
 
 try {
-    $validator->validateAndBuild($validPayload);
+    $validated = $validator->validateAndBuild($validPayload);
+    if (($validated['questions'][0]['topic'] ?? null) !== 'Arithmetic') {
+        $failures[] = 'Validated question topic should be preserved.';
+    }
 } catch (ApiException $exception) {
     $failures[] = 'Valid exam payload should not fail validation: ' . $exception->getMessage();
 }

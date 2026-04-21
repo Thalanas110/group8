@@ -2,6 +2,7 @@ import React from 'react';
 import { TrendingUp, Award, Users, FileText } from 'lucide-react';
 import { useApp } from '../../context/AppContext';
 import { Badge, getGradeBadge } from '../../components/shared/Badge';
+import { QuestionAnalyticsSection } from '../../components/analytics/QuestionAnalyticsSection';
 import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
   PieChart, Pie, Cell, Legend, LineChart, Line
@@ -234,6 +235,8 @@ export function AdminReports() {
           </tbody>
         </table>
       </div>
+
+      <QuestionAnalyticsSection audienceLabel="Admin" />
     </div>
   );
 }

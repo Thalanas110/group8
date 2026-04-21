@@ -30,6 +30,7 @@ export interface Question {
   id: string;
   text: string;
   type: QuestionType;
+  topic?: string | null;
   options?: string[];
   correctAnswer?: string;
   marks: number;
@@ -57,6 +58,14 @@ export interface Answer {
   marksAwarded?: number;
 }
 
+export interface QuestionTelemetry {
+  questionId: string;
+  topic?: string | null;
+  timeSpentSeconds: number;
+  visitCount: number;
+  answerChangeCount: number;
+}
+
 export interface Submission {
   id: string;
   examId: string;
@@ -69,4 +78,5 @@ export interface Submission {
   submittedAt: string;
   gradedAt?: string;
   status: SubmissionStatus;
+  questionTelemetry?: QuestionTelemetry[];
 }

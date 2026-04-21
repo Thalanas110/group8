@@ -319,6 +319,13 @@ export function AppProvider({ children }: { children: ReactNode }) {
       id: subId, examId: data.examId,
       answers: data.answers.map(a => ({ questionId: a.questionId, answer: a.answer })),
       submittedAt: data.submittedAt,
+      questionTelemetry: data.questionTelemetry?.map(metric => ({
+        questionId: metric.questionId,
+        topic: metric.topic ?? null,
+        timeSpentSeconds: metric.timeSpentSeconds,
+        visitCount: metric.visitCount,
+        answerChangeCount: metric.answerChangeCount,
+      })),
     }).catch(err => console.error('submitExam API error:', err));
   };
 

@@ -63,22 +63,35 @@ final class SeedService
             );
         }
 
+        [$adminDepartmentCiphertext, $adminDepartmentIv, $adminDepartmentTag] = $this->crypto->encryptParams($this->config->seedAdminDepartment);
+        [$teacherDepartmentCiphertext, $teacherDepartmentIv, $teacherDepartmentTag] = $this->crypto->encryptParams($this->config->seedTeacherDepartment);
+        [$studentDepartmentCiphertext, $studentDepartmentIv, $studentDepartmentTag] = $this->crypto->encryptParams($this->config->seedStudentDepartment);
+
         $this->gateway->call('sp_seed_core_accounts', [
             self::ADMIN_ID,
             $this->config->seedAdminName,
             strtolower($this->config->seedAdminEmail),
             $this->passwordHasher->hash($this->config->seedAdminPassword),
-            $this->crypto->encrypt($this->config->seedAdminDepartment),
+            $adminDepartmentCiphertext,
+            $adminDepartmentIv,
+            $adminDepartmentTag,
+            null,
             self::TEACHER_ID,
             $this->config->seedTeacherName,
             strtolower($this->config->seedTeacherEmail),
             $this->passwordHasher->hash($this->config->seedTeacherPassword),
-            $this->crypto->encrypt($this->config->seedTeacherDepartment),
+            $teacherDepartmentCiphertext,
+            $teacherDepartmentIv,
+            $teacherDepartmentTag,
+            null,
             self::STUDENT_ID,
             $this->config->seedStudentName,
             strtolower($this->config->seedStudentEmail),
             $this->passwordHasher->hash($this->config->seedStudentPassword),
-            $this->crypto->encrypt($this->config->seedStudentDepartment),
+            $studentDepartmentCiphertext,
+            $studentDepartmentIv,
+            $studentDepartmentTag,
+            null,
             date('Y-m-d'),
         ]);
     }

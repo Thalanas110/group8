@@ -85,6 +85,7 @@ final class AuthService
 
         $id = Helpers::uuidV4();
         $department = $this->normalizer->nullableString($payload['department'] ?? null);
+        [$departmentCiphertext, $departmentIv, $departmentTag] = $this->crypto->encryptParams($department);
 
         try {
             $rows = $this->gateway->call('sp_auth_register', [
@@ -93,7 +94,10 @@ final class AuthService
                 $email,
                 $this->passwordHasher->hash($password),
                 $role,
-                $this->crypto->encrypt($department),
+                $departmentCiphertext,
+                $departmentIv,
+                $departmentTag,
+                null,
                 date('Y-m-d'),
             ]);
         } catch (PDOException $exception) {
@@ -205,13 +209,25 @@ final class AuthService
         $bio = array_key_exists('bio', $payload)
             ? $this->normalizer->nullableString($payload['bio'])
             : ($existing['bio'] ?? null);
+        [$departmentCiphertext, $departmentIv, $departmentTag] = $this->crypto->encryptParams($department);
+        [$phoneCiphertext, $phoneIv, $phoneTag] = $this->crypto->encryptParams($phone);
+        [$bioCiphertext, $bioIv, $bioTag] = $this->crypto->encryptParams($bio);
 
         $rows = $this->gateway->call('sp_users_update_profile', [
             $userId,
             $name,
-            $this->crypto->encrypt($department),
-            $this->crypto->encrypt($phone),
-            $this->crypto->encrypt($bio),
+            $departmentCiphertext,
+            $departmentIv,
+            $departmentTag,
+            null,
+            $phoneCiphertext,
+            $phoneIv,
+            $phoneTag,
+            null,
+            $bioCiphertext,
+            $bioIv,
+            $bioTag,
+            null,
         ]);
 
         $row = $rows[0] ?? null;

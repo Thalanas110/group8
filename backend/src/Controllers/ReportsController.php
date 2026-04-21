@@ -29,4 +29,13 @@ final class ReportsController
     {
         return ['status' => 200, 'data' => $this->reportService->getPassFailReport($authUser)];
     }
+
+    /**
+     * @param array<string, mixed> $authUser
+     * @return array{status: int, data: array<string, mixed>|array<int, mixed>}
+     */
+    public function getQuestionAnalytics(array $authUser): array
+    {
+        return ['status' => 200, 'data' => $this->reportService->getQuestionAnalyticsReport($authUser)];
+    }
 }

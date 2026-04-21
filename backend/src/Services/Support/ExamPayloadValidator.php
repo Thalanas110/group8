@@ -163,6 +163,11 @@ final class ExamPayloadValidator
                 'marks' => $marks,
             ];
 
+            $topic = trim((string) ($question['topic'] ?? ''));
+            if ($topic !== '') {
+                $entry['topic'] = $topic;
+            }
+
             if ($type === 'mcq') {
                 $entry += $this->validateMcqQuestion($question, $position);
             } else if (array_key_exists('correctAnswer', $question)) {

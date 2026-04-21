@@ -56,14 +56,16 @@ final class ResultService
                 continue;
             }
 
-            $encryptedAnswerValue = $this->crypto->encrypt($answerValue);
-            if ($answerValue !== '' && $encryptedAnswerValue === null) {
+            [$answerCiphertext, $answerIv, $answerTag] = $this->crypto->encryptParams($answerValue);
+            if ($answerValue !== '' && $answerCiphertext === null) {
                 throw new ApiException(500, 'Failed to encrypt exam answer.');
             }
 
             $entry = [
                 'questionId' => $questionId,
-                'answer' => $encryptedAnswerValue ?? '',
+                'answerCiphertext' => $answerCiphertext,
+                'answerIv' => $answerIv,
+                'answerTag' => $answerTag,
             ];
 
             foreach ($exam['questions'] as $question) {
@@ -104,6 +106,7 @@ final class ResultService
             $grade = Helpers::gradeFromPercentage($percentage);
             $gradedAt = gmdate('Y-m-d H:i:s');
         }
+        [$feedbackCiphertext, $feedbackIv, $feedbackTag] = $this->crypto->encryptParams(null);
 
         $rows = $this->gateway->call('sp_results_submit', [
             (string) ($payload['id'] ?? Helpers::uuidV4()),
@@ -113,6 +116,9 @@ final class ResultService
             $totalScore,
             $percentage,
             $grade,
+            $feedbackCiphertext,
+            $feedbackIv,
+            $feedbackTag,
             null,
             $this->normalizer->normalizeDate((string) ($payload['submittedAt'] ?? gmdate('c')), true),
             $gradedAt,
@@ -122,6 +128,16 @@ final class ResultService
         $row = $rows[0] ?? null;
         if (!is_array($row)) {
             throw new ApiException(500, 'Submission failed.');
+        }
+
+        if (array_key_exists('questionTelemetry', $payload) && is_array($payload['questionTelemetry'])) {
+            $this->persistQuestionTelemetry(
+                (string) ($row['id'] ?? ''),
+                $examId,
+                (string) $authUser['id'],
+                $exam['questions'],
+                $payload['questionTelemetry'],
+            );
         }
 
         return $this->mapper->mapSubmissionRow($row);
@@ -192,6 +208,7 @@ final class ResultService
         $totalMarks = (float) ($row['totalMarks'] ?? 0);
         $percentage = $totalMarks > 0 ? round(($totalScore / $totalMarks) * 100, 2) : 0.0;
         $grade = Helpers::gradeFromPercentage($percentage);
+        [$feedbackCiphertext, $feedbackIv, $feedbackTag] = $this->crypto->encryptParams($feedback);
 
         $updatedRows = $this->gateway->call('sp_results_grade_update', [
             $submissionId,
@@ -199,7 +216,10 @@ final class ResultService
             $totalScore,
             $percentage,
             $grade,
-            $this->crypto->encrypt($feedback),
+            $feedbackCiphertext,
+            $feedbackIv,
+            $feedbackTag,
+            null,
             gmdate('Y-m-d H:i:s'),
             'graded',
         ]);
@@ -230,14 +250,16 @@ final class ResultService
             }
 
             $plainAnswer = (string) ($answer['answer'] ?? '');
-            $encryptedAnswer = $this->crypto->encrypt($plainAnswer);
-            if ($plainAnswer !== '' && $encryptedAnswer === null) {
+            [$answerCiphertext, $answerIv, $answerTag] = $this->crypto->encryptParams($plainAnswer);
+            if ($plainAnswer !== '' && $answerCiphertext === null) {
                 throw new ApiException(500, 'Failed to encrypt exam answer.');
             }
 
             $entry = [
                 'questionId' => $questionId,
-                'answer' => $encryptedAnswer ?? '',
+                'answerCiphertext' => $answerCiphertext,
+                'answerIv' => $answerIv,
+                'answerTag' => $answerTag,
             ];
 
             if (array_key_exists('marksAwarded', $answer)) {
@@ -248,5 +270,61 @@ final class ResultService
         }
 
         return $result;
+    }
+
+    /**
+     * @param array<int, array<string, mixed>> $questions
+     * @param array<int, array<string, mixed>> $questionTelemetry
+     */
+    private function persistQuestionTelemetry(
+        string $submissionId,
+        string $examId,
+        string $studentId,
+        array $questions,
+        array $questionTelemetry,
+    ): void {
+        if ($submissionId === '') {
+            return;
+        }
+
+        $questionTopicMap = [];
+        foreach ($questions as $question) {
+            if (!is_array($question)) {
+                continue;
+            }
+
+            $questionId = (string) ($question['id'] ?? '');
+            if ($questionId === '') {
+                continue;
+            }
+
+            $questionTopicMap[$questionId] = $this->normalizer->nullableString($question['topic'] ?? null);
+        }
+
+        $this->gateway->call('sp_submission_question_metrics_delete_by_submission', [$submissionId]);
+
+        foreach ($questionTelemetry as $metric) {
+            if (!is_array($metric)) {
+                continue;
+            }
+
+            $questionId = trim((string) ($metric['questionId'] ?? ''));
+            if ($questionId === '') {
+                continue;
+            }
+
+            $topic = $this->normalizer->nullableString($metric['topic'] ?? ($questionTopicMap[$questionId] ?? null));
+
+            $this->gateway->call('sp_submission_question_metrics_upsert', [
+                $submissionId,
+                $examId,
+                $studentId,
+                $questionId,
+                $topic,
+                max(0, (int) ($metric['timeSpentSeconds'] ?? 0)),
+                max(0, (int) ($metric['visitCount'] ?? 0)),
+                max(0, (int) ($metric['answerChangeCount'] ?? 0)),
+            ]);
+        }
     }
 }

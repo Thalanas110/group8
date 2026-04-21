@@ -66,6 +66,11 @@ final class ValueNormalizer
                 'marks' => (int) ($question['marks'] ?? 0),
             ];
 
+            $topic = trim((string) ($question['topic'] ?? ''));
+            if ($topic !== '') {
+                $entry['topic'] = $topic;
+            }
+
             if (isset($question['options']) && is_array($question['options'])) {
                 $entry['options'] = array_values(
                     array_map(static fn (mixed $value): string => (string) $value, $question['options']),

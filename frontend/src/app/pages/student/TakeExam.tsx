@@ -14,7 +14,7 @@ import {
   ShieldAlert,
 } from 'lucide-react';
 import { useApp } from '../../context/AppContext';
-import { Answer } from '../../data/types';
+import { Answer, QuestionTelemetry } from '../../data/types';
 import { ConfirmDialog } from '../../components/shared/Modal';
 import { toast } from 'sonner';
 import { violationApi, ViolationType } from '../../services/api';
@@ -25,6 +25,11 @@ import {
 
 const OPTION_LETTERS = ['A', 'B', 'C', 'D', 'E'];
 const MAX_TAB_SWITCHES = 3;
+
+type ActiveQuestionSession = {
+  questionId: string;
+  startedAt: number;
+};
 
 export function TakeExam() {
   const { examId } = useParams<{ examId: string }>();
@@ -43,6 +48,10 @@ export function TakeExam() {
   const [submitted, setSubmitted] = useState(false);
   const [lastSaved, setLastSaved] = useState<Date | null>(null);
   const autoSaveRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const [, setQuestionTelemetry] = useState<Record<string, QuestionTelemetry>>({});
+  const questionTelemetryRef = useRef<Record<string, QuestionTelemetry>>({});
+  const answersRef = useRef<Record<string, string>>({});
+  const activeQuestionSessionRef = useRef<ActiveQuestionSession | null>(null);
 
   // Anti-cheat state
   const [tabSwitchCount, setTabSwitchCount] = useState(0);
@@ -53,10 +62,88 @@ export function TakeExam() {
   const focusViolationStateRef = useRef(CreateExamFocusViolationState());
   const VIOLATION_COOLDOWN_MS = 10_000; // 10 s grace period after exam starts
 
+  const updateQuestionTelemetry = useCallback((
+    questionId: string,
+    topic: string | null | undefined,
+    updater: (current: QuestionTelemetry) => QuestionTelemetry,
+  ) => {
+    const currentTelemetry = questionTelemetryRef.current;
+    const current = currentTelemetry[questionId] ?? {
+      questionId,
+      topic: topic ?? null,
+      timeSpentSeconds: 0,
+      visitCount: 0,
+      answerChangeCount: 0,
+    };
+    const nextEntry = updater(current);
+    const next = {
+      ...currentTelemetry,
+      [questionId]: {
+        ...nextEntry,
+        questionId,
+        topic: nextEntry.topic ?? topic ?? null,
+      },
+    };
+    questionTelemetryRef.current = next;
+    setQuestionTelemetry(next);
+  }, []);
+
+  const finalizeActiveQuestionSession = useCallback(() => {
+    const activeSession = activeQuestionSessionRef.current;
+    if (!activeSession || !exam) return;
+
+    const question = exam.questions.find(item => item.id === activeSession.questionId);
+    const elapsedSeconds = Math.max(0, Math.round((Date.now() - activeSession.startedAt) / 1000));
+
+    updateQuestionTelemetry(activeSession.questionId, question?.topic ?? null, current => ({
+      ...current,
+      timeSpentSeconds: current.timeSpentSeconds + elapsedSeconds,
+    }));
+
+    activeQuestionSessionRef.current = null;
+  }, [exam, updateQuestionTelemetry]);
+
+  const startQuestionSession = useCallback((questionId: string) => {
+    if (!exam) return;
+
+    const question = exam.questions.find(item => item.id === questionId);
+    activeQuestionSessionRef.current = {
+      questionId,
+      startedAt: Date.now(),
+    };
+
+    updateQuestionTelemetry(questionId, question?.topic ?? null, current => ({
+      ...current,
+      visitCount: current.visitCount + 1,
+    }));
+  }, [exam, updateQuestionTelemetry]);
+
+  const updateAnswerValue = useCallback((questionId: string, value: string) => {
+    const currentValue = answersRef.current[questionId] ?? '';
+    if (currentValue === value) return;
+
+    const nextAnswers = {
+      ...answersRef.current,
+      [questionId]: value,
+    };
+    answersRef.current = nextAnswers;
+    setAnswers(nextAnswers);
+
+    const question = exam?.questions.find(item => item.id === questionId);
+    updateQuestionTelemetry(questionId, question?.topic ?? null, current => ({
+      ...current,
+      answerChangeCount: current.answerChangeCount + 1,
+    }));
+  }, [exam, updateQuestionTelemetry]);
+
   useEffect(() => {
     if (!currentUser) { navigate('/'); return; }
     if (!exam) { navigate('/student/exams'); return; }
   }, [exam, currentUser, navigate]);
+
+  useEffect(() => {
+    answersRef.current = answers;
+  }, [answers]);
 
   // Anti-cheat: detect tab switching and window blur
   useEffect(() => {
@@ -175,22 +262,49 @@ export function TakeExam() {
     return () => clearInterval(timer);
   }, [started, timeLeft, submitted]);
 
+  useEffect(() => {
+    if (!started || submitted || !exam) return;
+
+    const activeQuestionId = exam.questions[currentQ]?.id;
+    if (!activeQuestionId) return;
+
+    startQuestionSession(activeQuestionId);
+
+    return () => {
+      finalizeActiveQuestionSession();
+    };
+  }, [started, submitted, exam, currentQ, startQuestionSession, finalizeActiveQuestionSession]);
+
   const handleSubmit = useCallback(() => {
     if (!exam || !currentUser) return;
+    finalizeActiveQuestionSession();
+
     const answerList: Answer[] = exam.questions.map(q => ({
       questionId: q.id,
-      answer: answers[q.id] || '',
+      answer: answersRef.current[q.id] || '',
     }));
+    const questionTelemetry: QuestionTelemetry[] = exam.questions.map(q => {
+      const metric = questionTelemetryRef.current[q.id];
+      return {
+        questionId: q.id,
+        topic: metric?.topic ?? q.topic ?? null,
+        timeSpentSeconds: metric?.timeSpentSeconds ?? 0,
+        visitCount: metric?.visitCount ?? 0,
+        answerChangeCount: metric?.answerChangeCount ?? 0,
+      };
+    });
+
     submitExam({
       examId: exam.id,
       studentId: currentUser.id,
       answers: answerList,
+      questionTelemetry,
       submittedAt: new Date().toISOString(),
       status: 'submitted',
     });
     setSubmitted(true);
     toast.success('Exam submitted successfully!');
-  }, [exam, currentUser, answers, submitExam]);
+  }, [exam, currentUser, finalizeActiveQuestionSession, submitExam]);
 
   const toggleFlag = (qId: string) => {
     setFlagged(prev => {
@@ -306,7 +420,16 @@ export function TakeExam() {
               Cancel
             </button>
             <button
-              onClick={() => { setStarted(true); setTimeLeft(exam.duration * 60); }}
+              onClick={() => {
+                answersRef.current = {};
+                questionTelemetryRef.current = {};
+                activeQuestionSessionRef.current = null;
+                setAnswers({});
+                setQuestionTelemetry({});
+                setCurrentQ(0);
+                setStarted(true);
+                setTimeLeft(exam.duration * 60);
+              }}
               className="flex-1 bg-gray-900 text-white py-2.5 rounded-xl text-sm font-medium hover:bg-gray-700 transition-colors"
             >
               Start Exam
@@ -564,7 +687,7 @@ export function TakeExam() {
                             type="radio"
                             className="sr-only"
                             checked={selected}
-                            onChange={() => setAnswers(prev => ({ ...prev, [question.id]: opt }))}
+                            onChange={() => updateAnswerValue(question.id, opt)}
                           />
                           {/* Letter badge */}
                           <div
@@ -593,7 +716,7 @@ export function TakeExam() {
                       rows={4}
                       placeholder="Type your answer here..."
                       value={answers[question.id] || ''}
-                      onChange={e => setAnswers(prev => ({ ...prev, [question.id]: e.target.value }))}
+                      onChange={e => updateAnswerValue(question.id, e.target.value)}
                       className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-gray-900 text-sm resize-none transition-shadow leading-relaxed"
                     />
                     <div className="flex justify-end mt-1.5 gap-3 text-xs text-gray-400">
@@ -610,7 +733,7 @@ export function TakeExam() {
                       rows={10}
                       placeholder="Write your detailed answer here..."
                       value={answers[question.id] || ''}
-                      onChange={e => setAnswers(prev => ({ ...prev, [question.id]: e.target.value }))}
+                      onChange={e => updateAnswerValue(question.id, e.target.value)}
                       className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-gray-900 text-sm resize-none transition-shadow leading-relaxed"
                     />
                     <div className="flex items-center justify-between mt-1.5 text-xs text-gray-400">

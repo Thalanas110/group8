@@ -122,6 +122,7 @@ export interface ExamPayload {
   status: 'draft' | 'published' | 'completed';
   questions: {
     text: string; type: 'mcq' | 'short_answer' | 'essay';
+    topic?: string | null;
     options?: string[]; correctAnswer?: string; marks: number;
   }[];
 }
@@ -133,6 +134,7 @@ export interface ExamResponse {
   status: 'draft' | 'published' | 'completed';
   questions: {
     id: string; text: string; type: 'mcq' | 'short_answer' | 'essay';
+    topic?: string | null;
     options?: string[]; correctAnswer?: string; marks: number;
   }[];
   createdAt: string;
@@ -166,6 +168,13 @@ export interface SubmitResultPayload {
   examId: string;
   answers: { questionId: string; answer: string }[];
   submittedAt: string;
+  questionTelemetry?: {
+    questionId: string;
+    topic?: string | null;
+    timeSpentSeconds: number;
+    visitCount: number;
+    answerChangeCount: number;
+  }[];
   id?: string;
 }
 
@@ -221,6 +230,64 @@ export interface PassFailReport {
   byClass: { classId: string; className: string; passed: number; failed: number; passRate: number }[];
 }
 
+export interface QuestionAnalyticsCoverage {
+  totalSubmissions: number;
+  telemetryEnabledSubmissions: number;
+  totalQuestions: number;
+  topicTaggedQuestions: number;
+}
+
+export interface QuestionAnalyticsQuestion {
+  examId: string;
+  examTitle: string;
+  classId: string;
+  className: string;
+  questionId: string;
+  questionText: string;
+  questionType: 'mcq' | 'short_answer' | 'essay' | string;
+  topic?: string | null;
+  attemptCount: number;
+  gradedCount: number;
+  averageScorePct?: number | null;
+  correctRatePct?: number | null;
+  averageTimeSpentSeconds?: number | null;
+  telemetryCount: number;
+}
+
+export interface CommonWrongAnswerReport {
+  examId: string;
+  examTitle: string;
+  classId: string;
+  className: string;
+  questionId: string;
+  questionText: string;
+  topic?: string | null;
+  option: string;
+  count: number;
+  shareOfIncorrectPct: number;
+}
+
+export interface WeakTopicByClassReport {
+  classId: string;
+  className: string;
+  topic: string;
+  questionCount: number;
+  gradedResponseCount: number;
+  averageScorePct: number;
+  averageTimeSpentSeconds?: number | null;
+  telemetryCount: number;
+}
+
+export interface QuestionAnalyticsReport {
+  generatedAt: string;
+  coverage: QuestionAnalyticsCoverage;
+  questions: QuestionAnalyticsQuestion[];
+  hardestQuestions: QuestionAnalyticsQuestion[];
+  slowestQuestions: QuestionAnalyticsQuestion[];
+  commonWrongAnswers: CommonWrongAnswerReport[];
+  weakTopicsByClass: WeakTopicByClassReport[];
+}
+
 export const reportApi = {
   /** GET /api/reports/exam-performance */
   getExamPerformance: () =>
@@ -229,6 +296,10 @@ export const reportApi = {
   /** GET /api/reports/pass-fail */
   getPassFail: () =>
     request<PassFailReport>('GET', '/reports/pass-fail', undefined, true),
+
+  /** GET /api/reports/question-analytics */
+  getQuestionAnalytics: () =>
+    request<QuestionAnalyticsReport>('GET', '/reports/question-analytics', undefined, true),
 };
 
 // â”€â”€â”€ Classes CRUD â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
@@ -385,7 +456,7 @@ export const API_ENDPOINTS: EndpointDoc[] = [
       status: { type: 'draft | published | completed', required: true, description: 'Status' },
       questions: { type: 'Question[]', required: true, description: 'Array of questions' },
     },
-    responseExample: { id: 'e10', title: 'Midterm Exam', classId: 'c1', duration: 60, totalMarks: 100, status: 'draft', questions: [] },
+    responseExample: { id: 'e10', title: 'Midterm Exam', classId: 'c1', duration: 60, totalMarks: 100, status: 'draft', questions: [{ text: 'Solve 2 + 2', type: 'mcq', topic: 'Arithmetic', marks: 5 }] },
   },
   {
     id: 'exams-get', method: 'GET', path: '/api/exams', group: 'Exams',
@@ -395,7 +466,7 @@ export const API_ENDPOINTS: EndpointDoc[] = [
   {
     id: 'exams-get-id', method: 'GET', path: '/api/exams/{exam_id}', group: 'Exams',
     description: 'Retrieve a single exam by ID, including all questions.', auth: true,
-    responseExample: { id: 'e1', title: 'Algebra Midterm', questions: [{ id: 'q1', text: 'What is 2+2?', type: 'mcq', options: ['3', '4', '5'], correctAnswer: '4', marks: 10 }] },
+    responseExample: { id: 'e1', title: 'Algebra Midterm', questions: [{ id: 'q1', text: 'What is 2+2?', type: 'mcq', topic: 'Arithmetic', options: ['3', '4', '5'], correctAnswer: '4', marks: 10 }] },
   },
   // RESULTS
   {
@@ -405,6 +476,7 @@ export const API_ENDPOINTS: EndpointDoc[] = [
       examId: { type: 'string', required: true, description: 'Exam being submitted' },
       answers: { type: 'Answer[]', required: true, description: 'Array of { questionId, answer }' },
       submittedAt: { type: 'ISO 8601 datetime', required: true, description: 'Submission timestamp' },
+      questionTelemetry: { type: 'QuestionTelemetry[]', required: false, description: 'Per-question time spent and interaction metrics for new attempts' },
     },
     responseExample: { id: 's5', examId: 'e1', studentId: 'u4', status: 'submitted', submittedAt: '2026-02-24T10:30:00' },
   },
@@ -436,6 +508,18 @@ export const API_ENDPOINTS: EndpointDoc[] = [
       overall: { total: 13, passed: 10, failed: 3, passRate: 76.9 },
       byExam: [{ examId: 'e1', examTitle: 'Algebra Midterm', passed: 4, failed: 1, passRate: 80 }],
       byClass: [{ classId: 'c1', className: 'Mathematics 101', passed: 7, failed: 2, passRate: 77.8 }],
+    },
+  },
+  {
+    id: 'reports-question-analytics', method: 'GET', path: '/api/reports/question-analytics', group: 'Admin & Reporting',
+    description: 'Question-level analytics including difficulty, common wrong answers, time spent, and weak topics by class.', auth: true, role: 'admin / teacher',
+    responseExample: {
+      generatedAt: '2026-04-20T09:30:00Z',
+      coverage: { totalSubmissions: 18, telemetryEnabledSubmissions: 12, totalQuestions: 30, topicTaggedQuestions: 24 },
+      hardestQuestions: [{ questionId: 'q1', questionText: 'Factor x^2 - 9', averageScorePct: 38, averageTimeSpentSeconds: 92 }],
+      slowestQuestions: [{ questionId: 'q7', questionText: 'Explain your proof', averageScorePct: 61, averageTimeSpentSeconds: 214 }],
+      commonWrongAnswers: [{ questionId: 'q3', option: 'B', count: 7, shareOfIncorrectPct: 58.3 }],
+      weakTopicsByClass: [{ classId: 'c1', className: 'Mathematics 101', topic: 'Factoring', averageScorePct: 41.7, averageTimeSpentSeconds: 121 }],
     },
   },
 ];

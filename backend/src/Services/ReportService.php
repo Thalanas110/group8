@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Services;
 
 use App\Database\RoutineGateway;
+use App\Services\Support\QuestionAnalyticsBuilder;
 use App\Services\Support\ExamMapper;
 
 final class ReportService
@@ -12,6 +13,8 @@ final class ReportService
     public function __construct(
         private RoutineGateway $gateway,
         private ExamMapper $mapper,
+        private DataService $dataService,
+        private QuestionAnalyticsBuilder $questionAnalyticsBuilder,
     ) {
     }
 
@@ -119,5 +122,23 @@ final class ReportService
                 'passRate' => (float) ($row['passRate'] ?? 0),
             ], $byClass),
         ];
+    }
+
+    /**
+     * @param array<string, mixed> $authUser
+     * @return array<string, mixed>
+     */
+    public function getQuestionAnalyticsReport(array $authUser): array
+    {
+        $scopedData = $this->dataService->getAllData($authUser);
+        $metricRows = $this->gateway->call('sp_submission_question_metrics_get_all');
+
+        return $this->questionAnalyticsBuilder->build(
+            authUser: $authUser,
+            exams: is_array($scopedData['exams'] ?? null) ? $scopedData['exams'] : [],
+            classes: is_array($scopedData['classes'] ?? null) ? $scopedData['classes'] : [],
+            submissions: is_array($scopedData['submissions'] ?? null) ? $scopedData['submissions'] : [],
+            questionMetrics: $metricRows,
+        );
     }
 }

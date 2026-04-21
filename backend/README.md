@@ -22,11 +22,19 @@ This backend matches the API contract in `frontend/src/app/services/api.ts` and 
 
 ### Encrypted Sensitive Fields
 
-- `users.department_enc` (`department`)
-- `users.phone_enc` (`phone`)
-- `users.bio_enc` (`bio`)
-- `submissions.answers_json[*].answer` (exam answers, encrypted per answer value)
-- `submissions.feedback_enc` (`feedback`)
+- `users.department_ciphertext`, `users.department_iv`, `users.department_tag` (`department`)
+- `users.phone_ciphertext`, `users.phone_iv`, `users.phone_tag` (`phone`)
+- `users.bio_ciphertext`, `users.bio_iv`, `users.bio_tag` (`bio`)
+- `submissions.answers_json[*].answerCiphertext`, `answerIv`, `answerTag` (exam answers)
+- `submissions.feedback_ciphertext`, `submissions.feedback_iv`, `submissions.feedback_tag` (`feedback`)
+
+Legacy compatibility during migration is retained through the older combined-envelope fields:
+
+- `users.department_enc`
+- `users.phone_enc`
+- `users.bio_enc`
+- `submissions.feedback_enc`
+- `submissions.answers_json[*].answer`
 
 Passwords are never encrypted and are always hashed with `password_hash()`.
 
@@ -36,8 +44,8 @@ Passwords are never encrypted and are always hashed with `password_hash()`.
 - `PUT /users/profile` -> encrypts `department`, `phone`, `bio`
 - `POST /users` -> encrypts `department`, `phone`, `bio`
 - `PUT /users/:id` -> encrypts `department`, `phone`, `bio`
-- `POST /results/submit` -> encrypts each `answers[].answer`
-- `PUT /results/:id/grade` -> encrypts `feedback` and re-encrypts each `answers[].answer`
+- `POST /results/submit` -> encrypts each `answers[].answer` into `answerCiphertext`, `answerIv`, `answerTag`
+- `PUT /results/:id/grade` -> encrypts `feedback` and re-encrypts each answer into the new three-part format
 
 ### Decryption Points (Read)
 
@@ -45,6 +53,7 @@ Decryption is centralized in `App\Services\Support\ExamMapper` before returning 
 
 - auth/profile/user reads -> decrypt `department`, `phone`, `bio`
 - result reads -> decrypt `answers[].answer` and `feedback`
+- legacy fallback reads -> accept existing `gcmv1:<iv>:<tag>:<ciphertext>` records until repaired
 
 ### Key Management
 
@@ -56,15 +65,15 @@ Decryption is centralized in `App\Services\Support\ExamMapper` before returning 
 - Invalid key format/length fails fast during bootstrap.
 - Key is injected via config and not hardcoded inside controllers/services.
 
-### AES-256-GCM Envelope Storage
+### AES-256-GCM Storage Format
 
-Each encrypted value stores all required GCM components in one envelope:
+Each new encrypted value stores the required GCM components as three separate database values:
 
-- `iv` (12-byte random nonce)
-- `tag` (16-byte authentication tag)
-- ciphertext
+- `ciphertext`
+- `iv` (12-byte random nonce, base64-encoded)
+- `tag` (16-byte authentication tag, base64-encoded)
 
-Format: `gcmv1:<iv_b64>:<tag_b64>:<cipher_b64>`.
+Legacy records that still use `gcmv1:<iv_b64>:<tag_b64>:<cipher_b64>` remain readable and can be repaired in place with the provided migration script.
 
 ## Seed Accounts
 
@@ -77,14 +86,19 @@ No seed credentials are hardcoded in PHP or SQL files.
    - `backend/.env`
 2. Install PHP dependencies with Composer:
    - from `backend/`, run `composer install`
-3. Import SQL schema and routines:
+3. Import the base SQL schema and routines:
    - `backend/database/schema_routines.sql`
+4. Import the AES split-storage add-on schema:
+   - `backend/database/schema_split_encrypted_storage.sql`
+5. Import SQL logging routines:
    - `backend/database/logging_routines.sql`
-4. Configure logging DB in `.env` if different from primary DB:
+6. Repair existing legacy encrypted records after importing the add-on schema:
+   - from `backend/`, run `composer repair-encrypted-storage`
+7. Configure logging DB in `.env` if different from primary DB:
    - `LOG_DB_HOST`, `LOG_DB_PORT`, `LOG_DB_NAME`, `LOG_DB_USER`, `LOG_DB_PASS`
    - `LOG_RETENTION_DAYS` (default: `90`)
-5. Ensure Apache rewrite is enabled (`mod_rewrite`).
-6. Serve this repo so `/api/*` resolves to `api/index.php`.
+8. Ensure Apache rewrite is enabled (`mod_rewrite`).
+9. Serve this repo so `/api/*` resolves to `api/index.php`.
 
 ## Endpoints
 

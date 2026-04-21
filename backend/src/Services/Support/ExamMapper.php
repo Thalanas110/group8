@@ -27,9 +27,9 @@ final class ExamMapper
             'email' => (string) ($row['email'] ?? ''),
             'role' => (string) ($row['role'] ?? 'student'),
             'joinedAt' => (string) ($row['joinedAt'] ?? date('Y-m-d')),
-            'department' => $this->crypto->decrypt($this->normalizer->nullableString($row['departmentEnc'] ?? null)),
-            'phone' => $this->crypto->decrypt($this->normalizer->nullableString($row['phoneEnc'] ?? null)),
-            'bio' => $this->crypto->decrypt($this->normalizer->nullableString($row['bioEnc'] ?? null)),
+            'department' => $this->decryptField($row, 'departmentCiphertext', 'departmentIv', 'departmentTag', 'departmentEnc'),
+            'phone' => $this->decryptField($row, 'phoneCiphertext', 'phoneIv', 'phoneTag', 'phoneEnc'),
+            'bio' => $this->decryptField($row, 'bioCiphertext', 'bioIv', 'bioTag', 'bioEnc'),
         ];
     }
 
@@ -78,6 +78,11 @@ final class ExamMapper
                 'marks' => (int) ($question['marks'] ?? 0),
             ];
 
+            $topic = trim((string) ($question['topic'] ?? ''));
+            if ($topic !== '') {
+                $entry['topic'] = $topic;
+            }
+
             if (isset($question['options']) && is_array($question['options'])) {
                 $entry['options'] = array_values(
                     array_map(static fn (mixed $value): string => (string) $value, $question['options']),
@@ -122,16 +127,9 @@ final class ExamMapper
                 continue;
             }
 
-            $rawAnswer = (string) ($answer['answer'] ?? '');
-            $decryptedAnswer = $rawAnswer;
-            if (str_starts_with($rawAnswer, 'gcmv1:')) {
-                $resolved = $this->crypto->decrypt($rawAnswer);
-                $decryptedAnswer = $resolved ?? '[decryption_failed]';
-            }
-
             $entry = [
                 'questionId' => (string) ($answer['questionId'] ?? ''),
-                'answer' => $decryptedAnswer,
+                'answer' => $this->decryptAnswer($answer),
             ];
 
             if (array_key_exists('marksAwarded', $answer)) {
@@ -149,10 +147,51 @@ final class ExamMapper
             'totalScore' => isset($row['totalScore']) ? (float) $row['totalScore'] : null,
             'percentage' => isset($row['percentage']) ? (float) $row['percentage'] : null,
             'grade' => isset($row['grade']) ? (string) $row['grade'] : null,
-            'feedback' => $this->crypto->decrypt($this->normalizer->nullableString($row['feedbackEnc'] ?? null)),
+            'feedback' => $this->decryptField($row, 'feedbackCiphertext', 'feedbackIv', 'feedbackTag', 'feedbackEnc'),
             'submittedAt' => (string) ($row['submittedAt'] ?? ''),
             'gradedAt' => isset($row['gradedAt']) ? (string) $row['gradedAt'] : null,
             'status' => (string) ($row['status'] ?? 'submitted'),
         ];
+    }
+
+    /**
+     * @param array<string, mixed> $row
+     */
+    private function decryptField(
+        array $row,
+        string $ciphertextKey,
+        string $ivKey,
+        string $tagKey,
+        string $legacyKey,
+    ): ?string {
+        return $this->crypto->decryptValue(
+            $this->normalizer->nullableString($row[$ciphertextKey] ?? null),
+            $this->normalizer->nullableString($row[$ivKey] ?? null),
+            $this->normalizer->nullableString($row[$tagKey] ?? null),
+            $this->normalizer->nullableString($row[$legacyKey] ?? null),
+        );
+    }
+
+    /**
+     * @param array<string, mixed> $answer
+     */
+    private function decryptAnswer(array $answer): string
+    {
+        $ciphertext = $this->normalizer->nullableString($answer['answerCiphertext'] ?? null);
+        $iv = $this->normalizer->nullableString($answer['answerIv'] ?? null);
+        $tag = $this->normalizer->nullableString($answer['answerTag'] ?? null);
+        $legacyAnswer = array_key_exists('answer', $answer) ? (string) ($answer['answer'] ?? '') : null;
+
+        if ($ciphertext !== null || $iv !== null || $tag !== null) {
+            $resolved = $this->crypto->decryptFromParts($ciphertext, $iv, $tag);
+            return $resolved ?? '[decryption_failed]';
+        }
+
+        if ($legacyAnswer === null || $legacyAnswer === '') {
+            return '';
+        }
+
+        $resolved = $this->crypto->decryptLegacy($legacyAnswer);
+        return $resolved ?? $legacyAnswer;
     }
 }

@@ -12,17 +12,31 @@ $failures = [];
 
 $crypto = new AesGcmCrypto('0123456789abcdef0123456789abcdef');
 $plain = 'Sensitive text 123';
-$cipher = $crypto->encrypt($plain);
-$roundTrip = $crypto->decrypt($cipher);
-if (!is_string($cipher) || $cipher === '') {
-    $failures[] = 'Encryption did not produce ciphertext.';
-}
-if ($roundTrip !== $plain) {
-    $failures[] = 'AES-256-GCM decrypt mismatch.';
-}
+$payload = $crypto->encrypt($plain);
+if (!is_array($payload)) {
+    $failures[] = 'Encryption did not produce a structured AES payload.';
+} else {
+    foreach (['ciphertext', 'iv', 'tag'] as $requiredKey) {
+        if (!isset($payload[$requiredKey]) || !is_string($payload[$requiredKey]) || $payload[$requiredKey] === '') {
+            $failures[] = sprintf('Structured AES payload is missing %s.', $requiredKey);
+        }
+    }
 
-if (!str_starts_with((string) $cipher, 'gcmv1:')) {
-    $failures[] = 'AES-256-GCM envelope format is invalid.';
+    $roundTrip = $crypto->decryptFromParts(
+        $payload['ciphertext'] ?? null,
+        $payload['iv'] ?? null,
+        $payload['tag'] ?? null,
+    );
+    if ($roundTrip !== $plain) {
+        $failures[] = 'AES-256-GCM decrypt mismatch.';
+    }
+
+    $legacyEnvelope = $crypto->encryptLegacy($plain);
+    if (!is_string($legacyEnvelope) || $legacyEnvelope === '') {
+        $failures[] = 'Legacy envelope generation failed.';
+    } elseif ($crypto->decryptLegacy($legacyEnvelope) !== $plain) {
+        $failures[] = 'Legacy AES envelope decrypt mismatch.';
+    }
 }
 
 $jwt = new JwtService('unit-test-jwt-secret');

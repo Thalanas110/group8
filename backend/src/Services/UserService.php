@@ -51,6 +51,15 @@ final class UserService
         if (!in_array($role, ['student', 'teacher', 'admin'], true)) {
             throw new ApiException(422, 'Invalid role.');
         }
+        [$departmentCiphertext, $departmentIv, $departmentTag] = $this->crypto->encryptParams(
+            $this->normalizer->nullableString($payload['department'] ?? null),
+        );
+        [$phoneCiphertext, $phoneIv, $phoneTag] = $this->crypto->encryptParams(
+            $this->normalizer->nullableString($payload['phone'] ?? null),
+        );
+        [$bioCiphertext, $bioIv, $bioTag] = $this->crypto->encryptParams(
+            $this->normalizer->nullableString($payload['bio'] ?? null),
+        );
 
         $rows = $this->gateway->call('sp_users_create', [
             Helpers::uuidV4(),
@@ -58,9 +67,18 @@ final class UserService
             $email,
             $this->passwordHasher->hash($password),
             $role,
-            $this->crypto->encrypt($this->normalizer->nullableString($payload['department'] ?? null)),
-            $this->crypto->encrypt($this->normalizer->nullableString($payload['phone'] ?? null)),
-            $this->crypto->encrypt($this->normalizer->nullableString($payload['bio'] ?? null)),
+            $departmentCiphertext,
+            $departmentIv,
+            $departmentTag,
+            null,
+            $phoneCiphertext,
+            $phoneIv,
+            $phoneTag,
+            null,
+            $bioCiphertext,
+            $bioIv,
+            $bioTag,
+            null,
             $joinedAt,
         ]);
 
@@ -114,6 +132,9 @@ final class UserService
             : ($existing['bio'] ?? null);
 
         $joinedAt = $this->normalizer->normalizeDate((string) ($payload['joinedAt'] ?? $existing['joinedAt']), false);
+        [$departmentCiphertext, $departmentIv, $departmentTag] = $this->crypto->encryptParams($department);
+        [$phoneCiphertext, $phoneIv, $phoneTag] = $this->crypto->encryptParams($phone);
+        [$bioCiphertext, $bioIv, $bioTag] = $this->crypto->encryptParams($bio);
 
         $rows = $this->gateway->call('sp_users_update_admin', [
             $userId,
@@ -121,9 +142,18 @@ final class UserService
             $email,
             $passwordHash,
             $role,
-            $this->crypto->encrypt($department),
-            $this->crypto->encrypt($phone),
-            $this->crypto->encrypt($bio),
+            $departmentCiphertext,
+            $departmentIv,
+            $departmentTag,
+            null,
+            $phoneCiphertext,
+            $phoneIv,
+            $phoneTag,
+            null,
+            $bioCiphertext,
+            $bioIv,
+            $bioTag,
+            null,
             $joinedAt,
         ]);
 

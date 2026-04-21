@@ -14,5 +14,6 @@ final class ReportRoutes
     {
         $router->add('GET', '/reports/exam-performance', static fn (Request $request, array $params, ?array $authUser): array => $controller->getExamPerformance($authUser ?? []), true, ['admin', 'teacher']);
         $router->add('GET', '/reports/pass-fail', static fn (Request $request, array $params, ?array $authUser): array => $controller->getPassFail($authUser ?? []), true, ['admin', 'teacher']);
+        $router->add('GET', '/reports/question-analytics', static fn (Request $request, array $params, ?array $authUser): array => $controller->getQuestionAnalytics($authUser ?? []), true, ['admin', 'teacher']);
     }
 }

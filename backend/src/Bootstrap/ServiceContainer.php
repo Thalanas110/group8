@@ -36,6 +36,7 @@ use App\Services\ResultService;
 use App\Services\SeedService;
 use App\Services\Support\ExamMapper;
 use App\Services\Support\ExamPayloadValidator;
+use App\Services\Support\QuestionAnalyticsBuilder;
 use App\Services\Support\ValueNormalizer;
 use App\Services\UserService;
 use Throwable;
@@ -110,14 +111,16 @@ final class ServiceContainer
             normalizer: $normalizer,
         );
 
-        $reportService = new ReportService(
+        $dataService = new DataService(
             gateway: $gateway,
             mapper: $mapper,
         );
 
-        $dataService = new DataService(
+        $reportService = new ReportService(
             gateway: $gateway,
             mapper: $mapper,
+            dataService: $dataService,
+            questionAnalyticsBuilder: new QuestionAnalyticsBuilder(),
         );
 
         $seedService = new SeedService(

@@ -9,7 +9,7 @@ import { violationApi, ViolationRecord } from '../../services/api';
 
 type ExamFormData = Omit<Exam, 'id' | 'createdAt' | 'teacherId'>;
 const blankQuestion = (): Question => ({
-  id: Math.random().toString(36).substr(2, 9), text: '', type: 'mcq', options: ['', '', '', ''], correctAnswer: '', marks: 10,
+  id: Math.random().toString(36).substr(2, 9), text: '', type: 'mcq', topic: '', options: ['', '', '', ''], correctAnswer: '', marks: 10,
 });
 
 const toTimestamp = (value: string): number | null => {
@@ -420,6 +420,17 @@ export function TeacherExams() {
                   <div className="space-y-3">
                     <textarea rows={2} value={q.text} onChange={e => updateQuestion(idx, { text: e.target.value })} placeholder="Question text..."
                       className="w-full px-3 py-2.5 border border-gray-300 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-gray-900 resize-none bg-white" />
+                    <div>
+                      <label className="block text-xs font-medium text-gray-500 mb-1">Topic <span className="text-gray-400">(optional)</span></label>
+                      <input
+                        type="text"
+                        value={q.topic || ''}
+                        onChange={e => updateQuestion(idx, { topic: e.target.value })}
+                        placeholder="e.g. Arithmetic, Factoring, Newton's Laws"
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-gray-900 bg-white"
+                      />
+                      <p className="mt-1 text-[11px] text-gray-400">Topic tags power weak-topic analytics for future attempts.</p>
+                    </div>
                     <div className="grid grid-cols-2 gap-3">
                       <div>
                         <label className="block text-xs font-medium text-gray-500 mb-1">Type</label>
