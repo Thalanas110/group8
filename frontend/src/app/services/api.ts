@@ -7,7 +7,7 @@
 const envPhpBaseUrl = (import.meta.env.VITE_PHP_BASE_URL as string | undefined)?.trim();
 export const PHP_BASE_URL = envPhpBaseUrl && envPhpBaseUrl !== ''
   ? envPhpBaseUrl
-  : 'http://localhost/examsysnewest/api';
+  : 'http://localhost/group8/api';
 
 
 // â”€â”€â”€ Core HTTP Helper â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€

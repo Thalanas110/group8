@@ -7,10 +7,12 @@ use App\Config\AppConfig;
 use App\Config\Env;
 use App\Database\DbConnection;
 use App\Database\RoutineGateway;
+use App\Http\CorsPolicy;
 use App\Http\Request;
 use App\Http\Response;
 use App\Routing\Router;
 use App\Routing\Routes\ApiRouteRegistry;
+use App\Support\ApiException;
 use App\Support\Helpers;
 
 require_once __DIR__ . '/../backend/bootstrap/autoload.php';
@@ -18,12 +20,15 @@ require_once __DIR__ . '/../backend/bootstrap/autoload.php';
 $env = new Env(__DIR__ . '/../backend/.env');
 $config = AppConfig::fromEnv($env);
 
-header('Access-Control-Allow-Origin: *');
-header('Access-Control-Allow-Headers: Content-Type, Authorization');
-header('Access-Control-Allow-Methods: GET, POST, PUT, DELETE, OPTIONS');
+$corsAllowed = CorsPolicy::apply($config);
 
 if (($_SERVER['REQUEST_METHOD'] ?? 'GET') === 'OPTIONS') {
-    http_response_code(200);
+    http_response_code($corsAllowed ? 200 : 403);
+    exit;
+}
+
+if (!$corsAllowed) {
+    Response::json(['error' => 'Origin not allowed by CORS policy.'], 403);
     exit;
 }
 
@@ -106,6 +111,8 @@ try {
     );
 
     Response::json($result['data'], $result['status']);
+} catch (ApiException $apiException) {
+    Response::json(['error' => $apiException->getMessage()], $apiException->status);
 } catch (Throwable $throwable) {
     Response::json(['error' => 'Backend bootstrap failed.'], 500);
 }

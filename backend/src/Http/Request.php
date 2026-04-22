@@ -4,6 +4,9 @@ declare(strict_types=1);
 
 namespace App\Http;
 
+use App\Support\ApiException;
+use JsonException;
+
 final class Request
 {
     /**
@@ -32,9 +35,21 @@ final class Request
             $path = '/';
         }
 
-        $rawBody = file_get_contents('php://input') ?: '';
-        $decoded = json_decode($rawBody, true);
-        $body = is_array($decoded) ? $decoded : [];
+        $rawBody = self::readRawBody();
+        $body = [];
+        if (trim($rawBody) !== '') {
+            try {
+                $decoded = json_decode($rawBody, true, 512, JSON_THROW_ON_ERROR);
+            } catch (JsonException) {
+                throw new ApiException(400, 'Invalid JSON request body.');
+            }
+
+            if (!is_array($decoded)) {
+                throw new ApiException(400, 'JSON request body must decode to an object.');
+            }
+
+            $body = $decoded;
+        }
 
         $headers = [];
         $rawHeaders = function_exists('getallheaders') ? getallheaders() : [];
@@ -80,5 +95,23 @@ final class Request
 
         $token = trim(substr($auth, 7));
         return $token === '' ? null : $token;
+    }
+
+    private static function readRawBody(): string
+    {
+        $rawBody = file_get_contents('php://input');
+        if (!is_string($rawBody)) {
+            $rawBody = '';
+        }
+
+        // CLI tests do not populate php://input, so fall back to stdin there.
+        if ($rawBody === '' && PHP_SAPI === 'cli') {
+            $stdin = file_get_contents('php://stdin');
+            if (is_string($stdin)) {
+                return $stdin;
+            }
+        }
+
+        return $rawBody;
     }
 }

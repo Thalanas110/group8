@@ -1,34 +1,27 @@
-# Exam System PHP Backend
+# ExamHub PHP Backend
 
-This backend matches the API contract in `frontend/src/app/services/api.ts` and enforces:
+This backend is a vanilla PHP 8+ JSON API that matches the frontend contract and keeps AES-256-GCM encryption isolated in dedicated backend utilities.
 
-- AES-256-GCM encryption for sensitive fields (`department`, `phone`, `bio`, exam answers, `feedback`)
-- strict role-based access control (student/teacher/admin)
-- OOP PHP architecture
-- stored-routine-only data access (no inline SQL in PHP)
-- `utf8mb4` database encoding
-- dedicated logging database (`request_logs` + `audit_logs`) with fail-open writes
+## Compliance Summary
 
-## Project Compliance Summary
+- Runtime: vanilla PHP 8+ with custom routing/controllers
+- API style: REST-style JSON responses with proper HTTP status codes
+- Database: MySQL/MariaDB using group-designed schema + stored routines
+- Authentication: custom JWT plus persisted token sessions
+- Validation: request parsing and service-layer validation with structured API errors
+- Password handling: `password_hash()` only, never encrypted
 
-- Runtime: vanilla PHP 8+ (no Laravel/Slim frameworks)
-- API style: REST-style JSON responses with HTTP status codes
-- Database: MySQL/MariaDB
-- Authentication: custom JWT implementation + persisted token sessions
-- Validation: service-layer payload validation with structured API errors
-- Error handling: `ApiException` mapped to correct HTTP status codes
+## AES-256-GCM Security
 
-## AES-256-GCM Security Documentation
+### Encrypted Fields
 
-### Encrypted Sensitive Fields
+- `users.department_ciphertext`, `users.department_iv`, `users.department_tag`
+- `users.phone_ciphertext`, `users.phone_iv`, `users.phone_tag`
+- `users.bio_ciphertext`, `users.bio_iv`, `users.bio_tag`
+- `submissions.answers_json[*].answerCiphertext`, `answerIv`, `answerTag`
+- `submissions.feedback_ciphertext`, `submissions.feedback_iv`, `submissions.feedback_tag`
 
-- `users.department_ciphertext`, `users.department_iv`, `users.department_tag` (`department`)
-- `users.phone_ciphertext`, `users.phone_iv`, `users.phone_tag` (`phone`)
-- `users.bio_ciphertext`, `users.bio_iv`, `users.bio_tag` (`bio`)
-- `submissions.answers_json[*].answerCiphertext`, `answerIv`, `answerTag` (exam answers)
-- `submissions.feedback_ciphertext`, `submissions.feedback_iv`, `submissions.feedback_tag` (`feedback`)
-
-Legacy compatibility during migration is retained through the older combined-envelope fields:
+Legacy compatibility is still supported for:
 
 - `users.department_enc`
 - `users.phone_enc`
@@ -36,88 +29,151 @@ Legacy compatibility during migration is retained through the older combined-env
 - `submissions.feedback_enc`
 - `submissions.answers_json[*].answer`
 
-Passwords are never encrypted and are always hashed with `password_hash()`.
+### Encryption Points
 
-### Encryption Points (Create/Update)
+- `POST /auth/register` encrypts `department`
+- `PUT /users/profile` encrypts `department`, `phone`, `bio`
+- `POST /users` encrypts `department`, `phone`, `bio`
+- `PUT /users/:id` encrypts `department`, `phone`, `bio`
+- `POST /results/submit` encrypts each submitted answer
+- `PUT /results/:id/grade` encrypts `feedback` and stores answer payloads in the split AES format
 
-- `POST /auth/register` -> encrypts `department`
-- `PUT /users/profile` -> encrypts `department`, `phone`, `bio`
-- `POST /users` -> encrypts `department`, `phone`, `bio`
-- `PUT /users/:id` -> encrypts `department`, `phone`, `bio`
-- `POST /results/submit` -> encrypts each `answers[].answer` into `answerCiphertext`, `answerIv`, `answerTag`
-- `PUT /results/:id/grade` -> encrypts `feedback` and re-encrypts each answer into the new three-part format
+### Decryption Points
 
-### Decryption Points (Read)
+Decryption is centralized in `App\Services\Support\ExamMapper` before JSON is returned.
 
-Decryption is centralized in `App\Services\Support\ExamMapper` before returning API responses:
-
-- auth/profile/user reads -> decrypt `department`, `phone`, `bio`
-- result reads -> decrypt `answers[].answer` and `feedback`
-- legacy fallback reads -> accept existing `gcmv1:<iv>:<tag>:<ciphertext>` records until repaired
+- auth/profile/user reads decrypt department, phone, and bio
+- result reads decrypt answers and feedback
+- legacy combined envelopes are still readable until repaired
 
 ### Key Management
 
-- Key source: `APP_ENCRYPTION_KEY` from `backend/.env` (or environment variable)
+- Key source: `APP_ENCRYPTION_KEY` from `backend/.env` or the runtime environment
 - Accepted formats:
-  - raw 32-byte value
+  - raw 32-byte string
+  - plain base64 that decodes to 32 bytes
   - `base64:<...>` that decodes to 32 bytes
   - 64-character hex string
-- Invalid key format/length fails fast during bootstrap.
-- Key is injected via config and not hardcoded inside controllers/services.
+- Invalid keys fail fast during bootstrap
+- The key is loaded from configuration, not hardcoded in controllers or services
 
-### AES-256-GCM Storage Format
+## Database Files
 
-Each new encrypted value stores the required GCM components as three separate database values:
-
-- `ciphertext`
-- `iv` (12-byte random nonce, base64-encoded)
-- `tag` (16-byte authentication tag, base64-encoded)
-
-Legacy records that still use `gcmv1:<iv_b64>:<tag_b64>:<cipher_b64>` remain readable and can be repaired in place with the provided migration script.
-
-## Seed Accounts
-
-Seed account values are loaded from environment variables only (`SEED_ADMIN_*`, `SEED_TEACHER_*`, `SEED_STUDENT_*`).
-No seed credentials are hardcoded in PHP or SQL files.
+- Base schema and routines: `backend/database/schema_routines.sql`
+- AES split-storage add-on: `backend/database/schema_split_encrypted_storage.sql`
+- Logging schema and routines: `backend/database/logging_routines.sql`
 
 ## Setup
 
-1. Create `.env` from `.env.example`:
-   - `backend/.env`
-2. Install PHP dependencies with Composer:
-   - from `backend/`, run `composer install`
-3. Import the base SQL schema and routines:
-   - `backend/database/schema_routines.sql`
-4. Import the AES split-storage add-on schema:
-   - `backend/database/schema_split_encrypted_storage.sql`
-5. Import SQL logging routines:
-   - `backend/database/logging_routines.sql`
-6. Repair existing legacy encrypted records after importing the add-on schema:
-   - from `backend/`, run `composer repair-encrypted-storage`
-7. Configure logging DB in `.env` if different from primary DB:
-   - `LOG_DB_HOST`, `LOG_DB_PORT`, `LOG_DB_NAME`, `LOG_DB_USER`, `LOG_DB_PASS`
-   - `LOG_RETENTION_DAYS` (default: `90`)
-8. Ensure Apache rewrite is enabled (`mod_rewrite`).
-9. Serve this repo so `/api/*` resolves to `api/index.php`.
+### Local / XAMPP
 
-## Endpoints
+1. Create `backend/.env` from `backend/.env.example`.
+2. Run `composer install` inside `backend/`.
+3. Import:
+   - `schema_routines.sql`
+   - `schema_split_encrypted_storage.sql`
+   - `logging_routines.sql`
+4. Run `composer repair-encrypted-storage`.
+5. Ensure Apache rewrite is enabled and `/api/*` resolves to `api/index.php`.
 
-All frontend endpoints are implemented:
+### Hosted Bootstrap
+
+After setting deployed environment variables, run:
+
+```bash
+cd backend
+composer bootstrap-database
+```
+
+The bootstrap script:
+
+- connects to your configured deployment databases
+- applies the repo SQL in the correct order
+- retargets the hardcoded local database names to the deployed database names
+- repairs legacy encrypted records after the split-storage schema is applied
+
+## Netlify + Render + Railway
+
+Recommended deployment split:
+
+- Netlify serves the frontend SPA
+- Render runs the PHP backend from [render.yaml](/C:/xampp/htdocs/group8/render.yaml)
+- Railway provides MySQL
+
+### Render Backend Notes
+
+- Runtime: Docker, using `docker/backend/Dockerfile`
+- Health check path: `/api/health`
+- Set `CORS_ALLOW_ALL=false`
+- Set `CORS_ALLOWED_ORIGINS` to your Netlify site URL
+- Set the required seed credential env vars on first deploy if the database is empty
+
+### Railway Database Notes
+
+For Railway, the simplest setup is:
+
+- `DB_NAME=<your Railway MYSQLDATABASE value>`
+- `LOG_DB_NAME=<same value as DB_NAME>`
+
+That keeps both application tables and fail-open logging tables in the same Railway database, which avoids needing a second hosted database name during first deployment.
+
+### Netlify Frontend Notes
+
+Set `VITE_PHP_BASE_URL` in Netlify to your Render backend URL, for example:
+
+```env
+VITE_PHP_BASE_URL=https://your-render-service.onrender.com/api
+```
+
+The repo includes [netlify.toml](/C:/xampp/htdocs/group8/netlify.toml) for:
+
+- monorepo base directory selection (`frontend/`)
+- Vite build command
+- SPA route rewrites to `index.html`
+
+## CORS
+
+Environment variables:
+
+- `CORS_ALLOW_ALL=true` for local development
+- `CORS_ALLOW_ALL=false` in hosted environments
+- `CORS_ALLOWED_ORIGINS=https://your-site.netlify.app,https://www.example.com`
+
+When `CORS_ALLOW_ALL=false`, requests from unlisted origins are rejected.
+
+## Seed Accounts
+
+Seed credentials are loaded only from environment variables:
+
+- `SEED_ADMIN_*`
+- `SEED_TEACHER_*`
+- `SEED_STUDENT_*`
+
+If the database is empty and these credentials are missing, bootstrap requests will fail until they are configured.
+
+## Main Endpoints
 
 - Auth: `/auth/register`, `/auth/login`, `/auth/logout`
 - Users: `/users/profile`, `/users`, `/users/:id`
 - Exams: `/exams`, `/exams/:id`
 - Results: `/results/submit`, `/results/student/:id`, `/results/:id/grade`
 - Admin: `/admin/exams`, `/admin/results`
-- Reports: `/reports/exam-performance`, `/reports/pass-fail`
+- Reports: `/reports/exam-performance`, `/reports/pass-fail`, `/reports/question-analytics`
 - Classes: `/classes`, `/classes/join`, `/classes/:id/leave`, `/classes/:id/enroll`, `/classes/:id/students/:studentId`
 - Data: `/data/all`, `/data/reseed`
-- Docs: `/docs/verify` (admin, validates required endpoint coverage from backend route code)
+- Docs: `/docs/verify`
+- Health: `/health`
 
 ## Frontend Connection
 
-The frontend defaults to `http://localhost/examsysnewest/api` in PHP mode.
-If needed:
+Local example:
 
-- set backend mode to `php` in the API docs panel
-- set `VITE_PHP_BASE_URL` in frontend `.env` when using a different host/path
+```env
+VITE_PHP_BASE_URL=http://localhost/group8/api
+```
+
+Hosted example:
+
+```env
+VITE_PHP_BASE_URL=https://your-render-service.onrender.com/api
+```

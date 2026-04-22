@@ -11,6 +11,7 @@ use App\Services\Support\ExamMapper;
 use App\Services\Support\ValueNormalizer;
 use App\Support\ApiException;
 use App\Support\Helpers;
+use PDOException;
 
 final class UserService
 {
@@ -61,26 +62,30 @@ final class UserService
             $this->normalizer->nullableString($payload['bio'] ?? null),
         );
 
-        $rows = $this->gateway->call('sp_users_create', [
-            Helpers::uuidV4(),
-            $name,
-            $email,
-            $this->passwordHasher->hash($password),
-            $role,
-            $departmentCiphertext,
-            $departmentIv,
-            $departmentTag,
-            null,
-            $phoneCiphertext,
-            $phoneIv,
-            $phoneTag,
-            null,
-            $bioCiphertext,
-            $bioIv,
-            $bioTag,
-            null,
-            $joinedAt,
-        ]);
+        try {
+            $rows = $this->gateway->call('sp_users_create', [
+                Helpers::uuidV4(),
+                $name,
+                $email,
+                $this->passwordHasher->hash($password),
+                $role,
+                $departmentCiphertext,
+                $departmentIv,
+                $departmentTag,
+                null,
+                $phoneCiphertext,
+                $phoneIv,
+                $phoneTag,
+                null,
+                $bioCiphertext,
+                $bioIv,
+                $bioTag,
+                null,
+                $joinedAt,
+            ]);
+        } catch (PDOException $exception) {
+            throw $this->translateWriteException($exception, 'User creation failed.');
+        }
 
         $row = $rows[0] ?? null;
         if (!is_array($row)) {
@@ -136,26 +141,30 @@ final class UserService
         [$phoneCiphertext, $phoneIv, $phoneTag] = $this->crypto->encryptParams($phone);
         [$bioCiphertext, $bioIv, $bioTag] = $this->crypto->encryptParams($bio);
 
-        $rows = $this->gateway->call('sp_users_update_admin', [
-            $userId,
-            $name,
-            $email,
-            $passwordHash,
-            $role,
-            $departmentCiphertext,
-            $departmentIv,
-            $departmentTag,
-            null,
-            $phoneCiphertext,
-            $phoneIv,
-            $phoneTag,
-            null,
-            $bioCiphertext,
-            $bioIv,
-            $bioTag,
-            null,
-            $joinedAt,
-        ]);
+        try {
+            $rows = $this->gateway->call('sp_users_update_admin', [
+                $userId,
+                $name,
+                $email,
+                $passwordHash,
+                $role,
+                $departmentCiphertext,
+                $departmentIv,
+                $departmentTag,
+                null,
+                $phoneCiphertext,
+                $phoneIv,
+                $phoneTag,
+                null,
+                $bioCiphertext,
+                $bioIv,
+                $bioTag,
+                null,
+                $joinedAt,
+            ]);
+        } catch (PDOException $exception) {
+            throw $this->translateWriteException($exception, 'User update failed.');
+        }
 
         $row = $rows[0] ?? null;
         if (!is_array($row)) {
@@ -173,5 +182,21 @@ final class UserService
     private function generateDefaultPassword(): string
     {
         return 'Temp' . substr(bin2hex(random_bytes(6)), 0, 8) . '!1a';
+    }
+
+    private function translateWriteException(PDOException $exception, string $fallbackMessage): ApiException
+    {
+        $message = strtolower($exception->getMessage());
+        $code = (string) $exception->getCode();
+
+        if (
+            str_contains($message, 'email_exists') ||
+            str_contains($message, 'uq_users_email') ||
+            ($code === '23000' && str_contains($message, 'duplicate entry'))
+        ) {
+            return new ApiException(409, 'Email already in use.');
+        }
+
+        return new ApiException(500, $fallbackMessage);
     }
 }

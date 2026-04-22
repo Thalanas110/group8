@@ -40,20 +40,24 @@ final class ResultService
         }
 
         $exam = $this->mapper->mapExamRow($examRow);
-        $answersInput = is_array($payload['answers'] ?? null) ? $payload['answers'] : [];
+        $answersInput = $payload['answers'] ?? [];
+        if (!is_array($answersInput)) {
+            throw new ApiException(422, 'answers must be an array.');
+        }
 
         $gradedAnswers = [];
         $mcqScore = 0.0;
 
         foreach ($answersInput as $answerRow) {
+            $position = count($gradedAnswers) + 1;
             if (!is_array($answerRow)) {
-                continue;
+                throw new ApiException(422, sprintf('Answer %d is invalid.', $position));
             }
 
-            $questionId = (string) ($answerRow['questionId'] ?? '');
+            $questionId = trim((string) ($answerRow['questionId'] ?? ''));
             $answerValue = (string) ($answerRow['answer'] ?? '');
             if ($questionId === '') {
-                continue;
+                throw new ApiException(422, sprintf('Answer %d questionId is required.', $position));
             }
 
             [$answerCiphertext, $answerIv, $answerTag] = $this->crypto->encryptParams($answerValue);

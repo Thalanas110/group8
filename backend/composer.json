@@ -11,6 +11,7 @@
         }
     },
     "scripts": {
+        "bootstrap-database": "php scripts/bootstrap_database.php",
         "smoke-test": "php tests/SecuritySmokeTest.php",
         "exam-validation-test": "php tests/ExamValidationTest.php",
         "encryption-storage-test": "php tests/EncryptionStorageCompatibilityTest.php",

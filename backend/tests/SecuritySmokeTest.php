@@ -39,6 +39,25 @@ if (!is_array($payload)) {
     }
 }
 
+$renderStyleBase64Key = base64_encode('0123456789abcdef0123456789abcdef');
+try {
+    $renderCrypto = new AesGcmCrypto($renderStyleBase64Key);
+    $renderPayload = $renderCrypto->encrypt($plain);
+    $renderRoundTrip = is_array($renderPayload)
+        ? $renderCrypto->decryptFromParts(
+            $renderPayload['ciphertext'] ?? null,
+            $renderPayload['iv'] ?? null,
+            $renderPayload['tag'] ?? null,
+        )
+        : null;
+
+    if ($renderRoundTrip !== $plain) {
+        $failures[] = 'Plain base64 APP_ENCRYPTION_KEY values should round-trip correctly.';
+    }
+} catch (Throwable $throwable) {
+    $failures[] = 'Plain base64 APP_ENCRYPTION_KEY support failed: ' . $throwable->getMessage();
+}
+
 $jwt = new JwtService('unit-test-jwt-secret');
 $token = $jwt->issue(['sub' => 'u1', 'role' => 'admin'], 60);
 $payload = $jwt->verify($token);

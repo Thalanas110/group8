@@ -22,6 +22,7 @@ final class AppConfig
         public string $encryptionKey,
         public int $tokenTtlSeconds,
         public bool $allowCorsAll,
+        public array $corsAllowedOrigins,
         public string $seedAdminName,
         public string $seedAdminEmail,
         public string $seedAdminPassword,
@@ -55,6 +56,7 @@ final class AppConfig
             encryptionKey: $env->require('APP_ENCRYPTION_KEY'),
             tokenTtlSeconds: $env->getInt('AUTH_TOKEN_TTL_SECONDS', 28800),
             allowCorsAll: $env->getBool('CORS_ALLOW_ALL', true),
+            corsAllowedOrigins: self::csvEnv($env->get('CORS_ALLOWED_ORIGINS', '')),
             seedAdminName: $env->get('SEED_ADMIN_NAME', 'System Administrator'),
             seedAdminEmail: $env->get('SEED_ADMIN_EMAIL', ''),
             seedAdminPassword: $env->get('SEED_ADMIN_PASSWORD', ''),
@@ -74,5 +76,27 @@ final class AppConfig
     {
         $trimmed = trim($value);
         return $trimmed === '' ? null : $trimmed;
+    }
+
+    /**
+     * @return array<int, string>
+     */
+    private static function csvEnv(string $value): array
+    {
+        if (trim($value) === '') {
+            return [];
+        }
+
+        $items = array_map(
+            static fn (string $item): string => trim($item),
+            explode(',', $value),
+        );
+
+        return array_values(
+            array_filter(
+                $items,
+                static fn (string $item): bool => $item !== '',
+            ),
+        );
     }
 }

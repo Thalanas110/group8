@@ -231,6 +231,11 @@ final class AesGcmCrypto
             }
 
             $candidate = $decoded;
+        } elseif (preg_match('/^[A-Za-z0-9+\/]+=*$/', $candidate) === 1) {
+            $decoded = base64_decode($candidate, true);
+            if ($decoded !== false && strlen($decoded) === 32) {
+                $candidate = $decoded;
+            }
         }
 
         if (strlen($candidate) === 32) {
@@ -238,7 +243,7 @@ final class AesGcmCrypto
         }
 
         throw new RuntimeException(
-            'APP_ENCRYPTION_KEY must resolve to exactly 32 bytes (raw, base64:, or 64-char hex).'
+            'APP_ENCRYPTION_KEY must resolve to exactly 32 bytes (raw, base64, base64:, or 64-char hex).'
         );
     }
 }

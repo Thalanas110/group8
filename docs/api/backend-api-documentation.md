@@ -84,10 +84,28 @@ Decryption is centralized in `App\Services\Support\ExamMapper` before JSON is re
 - Encryption key source: `APP_ENCRYPTION_KEY` in `backend/.env` or the environment
 - Supported key formats:
   - raw 32-byte string
+  - plain base64 that resolves to 32 bytes
   - `base64:<...>` that resolves to 32 bytes
   - 64-character hex string
 - Invalid keys fail fast during bootstrap
 - The key is loaded via configuration and is not hardcoded in controllers or services
+
+## Deployment Notes
+
+- Recommended hosted split:
+  - Netlify frontend
+  - Render backend
+  - Railway MySQL
+- Render health check path: `/api/health`
+- Hosted bootstrap command:
+
+```bash
+cd backend
+composer bootstrap-database
+```
+
+- For Railway deployments, the recommended simple setup is to set `LOG_DB_NAME` equal to `DB_NAME`
+- In hosted environments, set `CORS_ALLOW_ALL=false` and configure `CORS_ALLOWED_ORIGINS` to the deployed frontend origin
 
 ## Migration and Legacy Record Repair
 

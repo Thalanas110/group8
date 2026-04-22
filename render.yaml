@@ -1,0 +1,45 @@
+services:
+  - type: web
+    name: examhub-api
+    runtime: docker
+    dockerContext: .
+    dockerfilePath: ./docker/backend/Dockerfile
+    healthCheckPath: /api/health
+    autoDeployTrigger: commit
+    envVars:
+      - key: DB_HOST
+        sync: false
+      - key: DB_PORT
+        sync: false
+      - key: DB_NAME
+        sync: false
+      - key: DB_USER
+        sync: false
+      - key: DB_PASS
+        sync: false
+      - key: LOG_DB_NAME
+        sync: false
+      - key: APP_JWT_SECRET
+        generateValue: true
+      - key: APP_ENCRYPTION_KEY
+        generateValue: true
+      - key: AUTH_TOKEN_TTL_SECONDS
+        value: "28800"
+      - key: LOG_RETENTION_DAYS
+        value: "90"
+      - key: CORS_ALLOW_ALL
+        value: "false"
+      - key: CORS_ALLOWED_ORIGINS
+        sync: false
+      - key: SEED_ADMIN_EMAIL
+        sync: false
+      - key: SEED_ADMIN_PASSWORD
+        sync: false
+      - key: SEED_TEACHER_EMAIL
+        sync: false
+      - key: SEED_TEACHER_PASSWORD
+        sync: false
+      - key: SEED_STUDENT_EMAIL
+        sync: false
+      - key: SEED_STUDENT_PASSWORD
+        sync: false
