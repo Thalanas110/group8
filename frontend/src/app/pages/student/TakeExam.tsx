@@ -61,7 +61,10 @@ export function TakeExam() {
   const tabSwitchCountRef = useRef(0);
   const examStartTimeRef = useRef<number | null>(null);
   const focusViolationStateRef = useRef(CreateExamFocusViolationState());
-  const VIOLATION_COOLDOWN_MS = 10_000; // 10 s grace period after exam starts
+  const VIOLATION_COOLDOWN_MS = 3_000; // 10 s grace period after exam starts
+  // i think this can be reduced to just 3 seconds tho.
+  // there.
+
 
   const updateQuestionTelemetry = useCallback((
     questionId: string,
