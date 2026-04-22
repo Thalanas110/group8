@@ -16,58 +16,26 @@ import {
   type QuestionAnalyticsReport,
   type WeakTopicByClassReport,
 } from '../../services/api';
+import { EmptyState } from '../../features/analytics/question-analytics/components/EmptyState';
+import { ListCard } from '../../features/analytics/question-analytics/components/ListCard';
+import {
+  filterQuestions,
+  filterWeakTopics,
+  filterWrongAnswers,
+  getClassOptions,
+  getExamOptions,
+  getHardestQuestions,
+  getSelectedExamClassId,
+  getSlowestQuestions,
+  getTopicOptions,
+} from '../../features/analytics/question-analytics/lib/filters';
+import { formatSeconds, scoreTone } from '../../features/analytics/question-analytics/lib/formatters';
 
 type QuestionAnalyticsSectionProps = {
   audienceLabel: 'Teacher' | 'Admin';
 };
 
 const selectClassNames = 'w-full rounded-xl border border-gray-200 bg-white px-3 py-2.5 text-sm text-gray-700 focus:outline-none focus:ring-2 focus:ring-gray-900';
-
-function formatSeconds(value?: number | null): string {
-  if (value === null || value === undefined) return 'No data';
-  if (value < 60) return `${value}s`;
-  const minutes = Math.floor(value / 60);
-  const seconds = value % 60;
-  return seconds === 0 ? `${minutes}m` : `${minutes}m ${seconds}s`;
-}
-
-function scoreTone(score?: number | null): string {
-  if (score === null || score === undefined) return 'text-gray-400';
-  if (score < 45) return 'text-red-600';
-  if (score < 65) return 'text-amber-600';
-  return 'text-emerald-600';
-}
-
-function EmptyState({ title, body }: { title: string; body: string }) {
-  return (
-    <div className="rounded-2xl border border-dashed border-gray-200 bg-gray-50 px-5 py-8 text-center">
-      <div className="text-sm font-semibold text-gray-700">{title}</div>
-      <div className="mt-1 text-sm text-gray-400">{body}</div>
-    </div>
-  );
-}
-
-function ListCard({
-  title,
-  subtitle,
-  items,
-}: {
-  title: string;
-  subtitle: string;
-  items: React.ReactNode[];
-}) {
-  return (
-    <div className="rounded-2xl border border-gray-200 bg-white p-5">
-      <div className="mb-4">
-        <h3 className="text-sm font-semibold text-gray-900">{title}</h3>
-        <p className="mt-1 text-xs text-gray-500">{subtitle}</p>
-      </div>
-      <div className="space-y-3">
-        {items.length > 0 ? items : [<EmptyState key="empty" title="No matching data yet" body="Try another filter or wait for more graded attempts." />]}
-      </div>
-    </div>
-  );
-}
 
 export function QuestionAnalyticsSection({ audienceLabel }: QuestionAnalyticsSectionProps) {
   const [report, setReport] = useState<QuestionAnalyticsReport | null>(null);
@@ -102,88 +70,15 @@ export function QuestionAnalyticsSection({ audienceLabel }: QuestionAnalyticsSec
     };
   }, []);
 
-  const classOptions = useMemo(() => {
-    const index = new Map<string, string>();
-    for (const question of report?.questions ?? []) {
-      if (!index.has(question.classId)) {
-        index.set(question.classId, question.className);
-      }
-    }
-    return Array.from(index.entries()).map(([id, name]) => ({ id, name }));
-  }, [report]);
-
-  const examOptions = useMemo(() => {
-    const index = new Map<string, { id: string; title: string; classId: string }>();
-    for (const question of report?.questions ?? []) {
-      if (selectedClass !== 'all' && question.classId !== selectedClass) continue;
-      if (!index.has(question.examId)) {
-        index.set(question.examId, {
-          id: question.examId,
-          title: question.examTitle,
-          classId: question.classId,
-        });
-      }
-    }
-    return Array.from(index.values());
-  }, [report, selectedClass]);
-
-  const topicOptions = useMemo(() => {
-    const topics = new Set<string>();
-    for (const question of report?.questions ?? []) {
-      if (selectedClass !== 'all' && question.classId !== selectedClass) continue;
-      if (selectedExam !== 'all' && question.examId !== selectedExam) continue;
-      if (question.topic) topics.add(question.topic);
-    }
-    return Array.from(topics.values()).sort((left, right) => left.localeCompare(right));
-  }, [report, selectedClass, selectedExam]);
-
-  const selectedExamClassId = useMemo(() => {
-    if (!report || selectedExam === 'all') return null;
-    return report.questions.find(question => question.examId === selectedExam)?.classId ?? null;
-  }, [report, selectedExam]);
-
-  const filteredQuestions = useMemo(() => {
-    return (report?.questions ?? []).filter(question => {
-      if (selectedClass !== 'all' && question.classId !== selectedClass) return false;
-      if (selectedExam !== 'all' && question.examId !== selectedExam) return false;
-      if (selectedTopic !== 'all' && question.topic !== selectedTopic) return false;
-      return true;
-    });
-  }, [report, selectedClass, selectedExam, selectedTopic]);
-
-  const filteredWrongAnswers = useMemo(() => {
-    return (report?.commonWrongAnswers ?? []).filter(item => {
-      if (selectedClass !== 'all' && item.classId !== selectedClass) return false;
-      if (selectedExam !== 'all' && item.examId !== selectedExam) return false;
-      if (selectedTopic !== 'all' && item.topic !== selectedTopic) return false;
-      return true;
-    });
-  }, [report, selectedClass, selectedExam, selectedTopic]);
-
-  const filteredWeakTopics = useMemo(() => {
-    return (report?.weakTopicsByClass ?? []).filter(item => {
-      const classMatch = selectedClass !== 'all'
-        ? item.classId === selectedClass
-        : selectedExamClassId === null || item.classId === selectedExamClassId;
-      if (!classMatch) return false;
-      if (selectedTopic !== 'all' && item.topic !== selectedTopic) return false;
-      return true;
-    });
-  }, [report, selectedClass, selectedExamClassId, selectedTopic]);
-
-  const hardestQuestions = useMemo(() => {
-    return [...filteredQuestions]
-      .filter(question => question.averageScorePct !== null && question.averageScorePct !== undefined)
-      .sort((left, right) => (left.averageScorePct ?? 101) - (right.averageScorePct ?? 101))
-      .slice(0, 5);
-  }, [filteredQuestions]);
-
-  const slowestQuestions = useMemo(() => {
-    return [...filteredQuestions]
-      .filter(question => question.averageTimeSpentSeconds !== null && question.averageTimeSpentSeconds !== undefined)
-      .sort((left, right) => (right.averageTimeSpentSeconds ?? 0) - (left.averageTimeSpentSeconds ?? 0))
-      .slice(0, 5);
-  }, [filteredQuestions]);
+  const classOptions = useMemo(() => getClassOptions(report), [report]);
+  const examOptions = useMemo(() => getExamOptions(report, selectedClass), [report, selectedClass]);
+  const topicOptions = useMemo(() => getTopicOptions(report, selectedClass, selectedExam), [report, selectedClass, selectedExam]);
+  const selectedExamClassId = useMemo(() => getSelectedExamClassId(report, selectedExam), [report, selectedExam]);
+  const filteredQuestions = useMemo(() => filterQuestions(report, selectedClass, selectedExam, selectedTopic), [report, selectedClass, selectedExam, selectedTopic]);
+  const filteredWrongAnswers = useMemo(() => filterWrongAnswers(report, selectedClass, selectedExam, selectedTopic), [report, selectedClass, selectedExam, selectedTopic]);
+  const filteredWeakTopics = useMemo(() => filterWeakTopics(report, selectedClass, selectedExamClassId, selectedTopic), [report, selectedClass, selectedExamClassId, selectedTopic]);
+  const hardestQuestions = useMemo(() => getHardestQuestions(filteredQuestions), [filteredQuestions]);
+  const slowestQuestions = useMemo(() => getSlowestQuestions(filteredQuestions), [filteredQuestions]);
 
   const telemetryCoveragePct = report && report.coverage.totalSubmissions > 0
     ? Math.round((report.coverage.telemetryEnabledSubmissions / report.coverage.totalSubmissions) * 100)

@@ -1,0 +1,21 @@
+import type { Metadata } from 'next';
+
+export const metadata: Metadata = {
+  title: '{{title}}',
+  description: '{{description}}',
+  alternates: { canonical: '{{canonical}}' },
+  openGraph: {
+    title: '{{ogTitle}}',
+    description: '{{ogDescription}}',
+    images: ['{{ogImage}}'],
+  },
+};
+
+export default async function {{PageName}}Page() {
+  return (
+    <main>
+      <h1>{{h1}}</h1>
+      {{content}}
+    </main>
+  );
+}

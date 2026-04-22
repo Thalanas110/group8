@@ -1,4 +1,4 @@
-import type { ViolationType } from '../../services/api';
+import type { ViolationType } from '../../../../services/api';
 
 export type ExamFocusViolationEvent =
   | { type: 'visibilitychange'; hidden: boolean }
@@ -14,13 +14,13 @@ export interface ExamFocusViolationResolution {
   violationType: ViolationType | null;
 }
 
-export function CreateExamFocusViolationState(): ExamFocusViolationState {
+export function createExamFocusViolationState(): ExamFocusViolationState {
   return {
     pendingVisibleBlur: false,
   };
 }
 
-export function ResolveExamFocusViolation(
+export function resolveExamFocusViolation(
   state: ExamFocusViolationState,
   event: ExamFocusViolationEvent,
 ): ExamFocusViolationResolution {

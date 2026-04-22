@@ -1,0 +1,114 @@
+import type { Class, Exam, Submission, User } from '../../data/types';
+import { authApi, dataApi } from '../../services/api';
+import {
+  clearStoredSession,
+  readStoredToken,
+  writeStoredToken,
+} from '../app-context.storage';
+import type { AppStateSetters } from '../app-context.types';
+
+type AuthDomainDeps = AppStateSetters;
+
+function applyApiSnapshot(
+  setters: Pick<AuthDomainDeps, 'setUsers' | 'setClasses' | 'setExams' | 'setSubmissions'>,
+  snapshot: Awaited<ReturnType<typeof dataApi.getAll>>,
+) {
+  setters.setUsers(snapshot.users as User[]);
+  setters.setExams(snapshot.exams as unknown as Exam[]);
+  setters.setClasses(snapshot.classes as Class[]);
+  setters.setSubmissions(snapshot.submissions as unknown as Submission[]);
+}
+
+function clearAppState(setters: AuthDomainDeps) {
+  setters.setCurrentUser(null);
+  setters.setUsers([]);
+  setters.setExams([]);
+  setters.setClasses([]);
+  setters.setSubmissions([]);
+}
+
+export function createAuthDomain(setters: AuthDomainDeps) {
+  return {
+    async loadFromApi() {
+      const token = readStoredToken();
+      if (!token) return;
+
+      try {
+        setters.setApiLoading(true);
+        const snapshot = await dataApi.getAll();
+        applyApiSnapshot(setters, snapshot);
+      } catch (error) {
+        console.error('Failed to load data from API on mount:', error);
+      } finally {
+        setters.setApiLoading(false);
+      }
+    },
+
+    async login(email: string, password: string): Promise<{ success: boolean; error?: string }> {
+      try {
+        setters.setApiLoading(true);
+        const result = await authApi.login({ email, password });
+        writeStoredToken(result.token);
+        setters.setCurrentUser(result.user as User);
+
+        const snapshot = await dataApi.getAll();
+        applyApiSnapshot(setters, snapshot);
+
+        return { success: true };
+      } catch (apiError) {
+        console.error('API login failed:', apiError);
+        clearStoredSession();
+        clearAppState(setters);
+
+        const message = apiError instanceof Error && apiError.message.trim() !== ''
+          ? apiError.message
+          : 'Authentication failed';
+
+        return { success: false, error: message };
+      } finally {
+        setters.setApiLoading(false);
+      }
+    },
+
+    logout() {
+      const token = readStoredToken();
+      if (token) {
+        authApi.logout().catch(error => console.error('Logout API error:', error));
+      }
+
+      clearStoredSession();
+      clearAppState(setters);
+    },
+
+    async register(data: Partial<User>): Promise<{ success: boolean; error?: string }> {
+      try {
+        setters.setApiLoading(true);
+        const result = await authApi.register({
+          name: data.name ?? '',
+          email: data.email ?? '',
+          password: data.password ?? '',
+          role: data.role ?? 'student',
+          department: data.department,
+        });
+
+        writeStoredToken(result.token);
+        setters.setCurrentUser(result.user as User);
+
+        const snapshot = await dataApi.getAll();
+        applyApiSnapshot(setters, snapshot);
+
+        return { success: true };
+      } catch (apiError) {
+        console.error('API register failed:', apiError);
+
+        const message = apiError instanceof Error && apiError.message.trim() !== ''
+          ? apiError.message
+          : 'Registration failed';
+
+        return { success: false, error: message };
+      } finally {
+        setters.setApiLoading(false);
+      }
+    },
+  };
+}

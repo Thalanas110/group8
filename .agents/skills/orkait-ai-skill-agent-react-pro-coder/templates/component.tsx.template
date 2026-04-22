@@ -1,0 +1,22 @@
+{{#if client}}
+'use client';
+{{/if}}
+
+import * as React from 'react';
+import { cn } from '@/lib/cn';
+{{#if usesIcons}}
+import { {{IconName}} } from 'lucide-react';
+{{/if}}
+import type { {{ComponentName}}Props } from './{{fileBase}}.types';
+
+export function {{ComponentName}}({ className, ...props }: {{ComponentName}}Props) {
+  return (
+    <section
+      role="{{role}}"
+      className={cn('{{baseClasses}}', className)}
+      {...props}
+    >
+      {{children}}
+    </section>
+  );
+}
