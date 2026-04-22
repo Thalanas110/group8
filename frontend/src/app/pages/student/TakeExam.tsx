@@ -12,6 +12,7 @@ import {
   BarChart2,
   Save,
   ShieldAlert,
+  UserCog,
 } from 'lucide-react';
 import { useApp } from '../../context/AppContext';
 import { Answer, QuestionTelemetry } from '../../data/types';
@@ -43,7 +44,7 @@ export function TakeExam() {
   const [currentQ, setCurrentQ] = useState(0);
   const [answers, setAnswers] = useState<Record<string, string>>({});
   const [flagged, setFlagged] = useState<Set<string>>(new Set());
-  const [timeLeft, setTimeLeft] = useState(exam ? exam.duration * 60 : 0);
+  const [timeLeft, setTimeLeft] = useState(exam ? (exam.duration + (exam.extraTimeMinutes ?? 0)) * 60 : 0);
   const [showConfirm, setShowConfirm] = useState(false);
   const [submitted, setSubmitted] = useState(false);
   const [lastSaved, setLastSaved] = useState<Date | null>(null);
@@ -386,7 +387,7 @@ export function TakeExam() {
 
           <div className="grid grid-cols-2 gap-3 mb-6">
             {[
-              { label: 'Duration', value: `${exam.duration} min` },
+              { label: 'Duration', value: `${exam.duration + (exam.extraTimeMinutes ?? 0)} min${(exam.extraTimeMinutes ?? 0) > 0 ? ` (+${exam.extraTimeMinutes})` : ''}` },
               { label: 'Total Marks', value: exam.totalMarks },
               { label: 'Questions', value: exam.questions.length },
               { label: 'Pass Mark', value: exam.passingMarks },
@@ -397,6 +398,30 @@ export function TakeExam() {
               </div>
             ))}
           </div>
+
+          {/* Accommodation info */}
+          {((exam.extraTimeMinutes ?? 0) > 0 || (exam.attemptLimit ?? 1) > 1 || exam.effectiveStartDate || (exam.accessibilityPreferences ?? []).length > 0) && (
+            <div className="bg-blue-50 border border-blue-200 rounded-xl p-4 mb-3 flex items-start gap-3">
+              <UserCog className="w-5 h-5 text-blue-500 flex-shrink-0 mt-0.5" />
+              <div>
+                <p className="text-sm font-semibold text-blue-900 mb-1">Accommodations Applied</p>
+                <ul className="text-sm text-blue-700 space-y-0.5">
+                  {(exam.extraTimeMinutes ?? 0) > 0 && (
+                    <li>+{exam.extraTimeMinutes} min extra time (effective duration: {exam.duration + (exam.extraTimeMinutes ?? 0)} min)</li>
+                  )}
+                  {(exam.attemptLimit ?? 1) > 1 && (
+                    <li>Up to {exam.attemptLimit} attempts ({exam.attemptsUsed ?? 0} used)</li>
+                  )}
+                  {exam.effectiveStartDate && exam.effectiveEndDate && (
+                    <li>Alternate window: {new Date(exam.effectiveStartDate).toLocaleString()} – {new Date(exam.effectiveEndDate).toLocaleString()}</li>
+                  )}
+                  {(exam.accessibilityPreferences ?? []).map(p => (
+                    <li key={p}>{p.replace(/_/g, ' ')}</li>
+                  ))}
+                </ul>
+              </div>
+            </div>
+          )}
 
           <div className="bg-gray-50 border border-gray-200 rounded-xl p-4 mb-3 flex items-start gap-3">
             <AlertTriangle className="w-5 h-5 text-gray-500 flex-shrink-0 mt-0.5" />
@@ -428,7 +453,7 @@ export function TakeExam() {
                 setQuestionTelemetry({});
                 setCurrentQ(0);
                 setStarted(true);
-                setTimeLeft(exam.duration * 60);
+                setTimeLeft((exam.duration + (exam.extraTimeMinutes ?? 0)) * 60);
               }}
               className="flex-1 bg-gray-900 text-white py-2.5 rounded-xl text-sm font-medium hover:bg-gray-700 transition-colors"
             >

@@ -18,6 +18,15 @@ final class ResultsController
      * @param array<string, mixed> $authUser
      * @return array{status: int, data: array<string, mixed>|array<int, mixed>}
      */
+    public function startAttempt(Request $request, array $authUser): array
+    {
+        return ['status' => 201, 'data' => $this->resultService->startAttempt($authUser, $request->body)];
+    }
+
+    /**
+     * @param array<string, mixed> $authUser
+     * @return array{status: int, data: array<string, mixed>|array<int, mixed>}
+     */
     public function submitResult(Request $request, array $authUser): array
     {
         return ['status' => 201, 'data' => $this->resultService->submitResult($authUser, $request->body)];

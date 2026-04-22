@@ -23,7 +23,11 @@ The local MySQL container now initializes from:
 
 - `backend/database/schema_routines.sql`
 - `backend/database/schema_split_encrypted_storage.sql`
+- `backend/database/migrate_add_question_analytics.sql`
+- `backend/database/migrate_add_student_exam_accommodations.sql`
+- `backend/database/migrate_enable_submission_attempts.sql`
 - `backend/database/logging_routines.sql`
+- `backend/database/migrate_add_exam_violations.sql`
 
 Useful commands:
 
@@ -60,6 +64,7 @@ composer bootstrap-database
 ```
 
 That command applies the repo SQL in the correct order, retargets the hardcoded local database names to your deployed database names, and repairs legacy encrypted records.
+It now also auto-discovers and applies every `backend/database/migrate_*.sql` file, so new DB work can ship as additive migrations without editing the base schema.
 
 ## Docs
 

@@ -42,6 +42,10 @@ Repository: https://github.com/Thalanas110/group8
   - `submissions.feedback_ciphertext`
   - `submissions.feedback_iv`
   - `submissions.feedback_tag`
+- Accessibility preferences:
+  - `student_exam_accommodations.accessibility_preferences_ciphertext`
+  - `student_exam_accommodations.accessibility_preferences_iv`
+  - `student_exam_accommodations.accessibility_preferences_tag`
 
 ### Legacy Compatibility
 
@@ -67,6 +71,8 @@ The backend keeps these records readable during migration, then repairs them int
   - Encrypts `department`, `phone`, `bio`
 - `POST /api/results/submit`
   - Encrypts each exam answer into `answerCiphertext`, `answerIv`, `answerTag`
+- `PUT /api/exams/{id}/accommodations/{studentId}`
+  - Encrypts `accessibilityPreferences`
 - `PUT /api/results/{id}/grade`
   - Encrypts `feedback`
   - Re-encrypts each answer into the same three-part format
@@ -76,6 +82,8 @@ The backend keeps these records readable during migration, then repairs them int
 Decryption is centralized in `App\Services\Support\ExamMapper` before JSON is returned to API clients.
 
 - Auth and profile reads decrypt user department, phone, and bio
+- Accommodation reads decrypt `accessibilityPreferences`
+- Student exam reads decrypt and expose accommodation summaries
 - Result reads decrypt exam answers and feedback
 - Legacy fallback reads decrypt the old combined `gcmv1:<iv>:<tag>:<ciphertext>` format when needed
 
@@ -113,7 +121,11 @@ composer bootstrap-database
 
 - Base schema: `backend/database/schema_routines.sql`
 - AES split-storage add-on schema: `backend/database/schema_split_encrypted_storage.sql`
+- Question analytics migration: `backend/database/migrate_add_question_analytics.sql`
+- Student accommodations migration: `backend/database/migrate_add_student_exam_accommodations.sql`
+- Submission attempts migration: `backend/database/migrate_enable_submission_attempts.sql`
 - Logging schema: `backend/database/logging_routines.sql`
+- Exam violations migration: `backend/database/migrate_add_exam_violations.sql`
 
 ### Repair Step
 
@@ -131,6 +143,65 @@ This repair flow:
 - splits them into ciphertext, IV, and tag
 - writes them back into the new columns / JSON keys
 - clears the legacy combined fields after successful conversion
+
+## Student Accommodations and Attempt Flow
+
+### Accommodation Fields
+
+Teacher/admin accommodation upserts may set:
+
+- `extraTimeMinutes`
+- `alternateStartAt`
+- `alternateEndAt`
+- `attemptLimit`
+- `accessibilityPreferences`
+
+Validation rules:
+
+- `extraTimeMinutes >= 0`
+- `attemptLimit >= 1` when provided
+- alternate schedule fields must be provided together
+- effective end must be later than effective start
+- `accessibilityPreferences` must be JSON-encodable
+
+### Effective Student Exam Fields
+
+Student exam reads include:
+
+- `attemptLimit`
+- `attemptsUsed`
+- `extraTimeMinutes`
+- `effectiveStartDate`
+- `effectiveEndDate`
+- `accessibilityPreferences`
+
+### Submission Attempt Fields
+
+Submission/result reads include:
+
+- `attemptNo`
+- `startedAt`
+- `allowedDurationMinutes`
+- `effectiveWindowStartAt`
+- `effectiveWindowEndAt`
+
+### Attempt Enforcement
+
+- `POST /api/results/start` creates an `in_progress` attempt.
+- `POST /api/results/submit` accepts:
+  - `submissionId` for explicit started-attempt submission
+  - legacy `examId` for compatibility, which auto-starts a fresh attempt first
+- Start rules:
+  - student must see the exam
+  - exam must be `published`
+  - current time must be inside the effective allowed schedule
+  - attempt limit must not already be exhausted
+  - another active in-progress attempt blocks a new start
+- Submit rules:
+  - answers payload must be valid
+  - submission must belong to the student
+  - submission must still be `in_progress`
+  - submit after the effective window or time limit marks the attempt `expired` and returns `409`
 
 ## Main Endpoints
 
@@ -150,6 +221,11 @@ This repair flow:
 | GET | `/api/exams/{id}` | Get exam by id |
 | PUT | `/api/exams/{id}` | Update exam |
 | DELETE | `/api/exams/{id}` | Delete exam |
+| GET | `/api/exams/{id}/accommodations` | List per-student accommodations for an exam |
+| GET | `/api/exams/{id}/accommodations/{studentId}` | Get one student accommodation override |
+| PUT | `/api/exams/{id}/accommodations/{studentId}` | Create or update one student accommodation override |
+| DELETE | `/api/exams/{id}/accommodations/{studentId}` | Remove one student accommodation override |
+| POST | `/api/results/start` | Start a trusted in-progress exam attempt |
 | POST | `/api/results/submit` | Submit exam answers |
 | GET | `/api/results/student/{id}` | Get results by student |
 | PUT | `/api/results/{id}/grade` | Grade a submission |
@@ -165,4 +241,5 @@ This repair flow:
 
 - Passwords are never encrypted. They are hashed with `password_hash()`.
 - API responses always return decrypted plaintext for authorized consumers, never raw encrypted database payloads.
+- Student accommodations are stored as additive migrations, not by editing the base schema file.
 - The frontend remains unchanged; only the backend storage and compatibility logic were updated for compliance.

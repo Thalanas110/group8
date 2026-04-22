@@ -64,9 +64,12 @@ What it does:
 
 - applies `schema_routines.sql`
 - applies `schema_split_encrypted_storage.sql`
+- auto-discovers and applies every `backend/database/migrate_*.sql` file
 - applies `logging_routines.sql`
 - retargets local hardcoded schema database names to the deployed database names
 - repairs legacy encrypted records into the split AES storage format
+
+That means new database work, including the student accommodation and attempt-flow rollout, deploys through new migration files instead of changing the original schema files.
 
 ## 3. Netlify Frontend
 
@@ -92,6 +95,7 @@ After deployment:
 2. Log in with your seed admin account.
 3. Confirm Netlify can load data from the Render API.
 4. Confirm encrypted fields are returned as decrypted plaintext in API responses, not as ciphertext/IV/tag payloads.
+5. Confirm teacher/admin accommodation endpoints work and student `POST /api/results/start` respects attempt limits and alternate schedules.
 
 ## 5. Security Notes
 

@@ -1,8 +1,9 @@
 import React, { useState } from 'react';
-import { Plus, Edit2, Trash2, Eye, FileText, Clock, BookOpen, ChevronDown, ChevronUp, X, PlusCircle, ShieldAlert } from 'lucide-react';
+import { Plus, Edit2, Trash2, Eye, FileText, Clock, BookOpen, ChevronDown, ChevronUp, X, PlusCircle, ShieldAlert, UserCog } from 'lucide-react';
 import { useApp } from '../../context/AppContext';
 import { Badge, getStatusBadge } from '../../components/shared/Badge';
 import { Modal, ConfirmDialog } from '../../components/shared/Modal';
+import { ExamAccommodationsModal } from '../../components/shared/ExamAccommodationsModal';
 import { Exam, Question, ExamStatus } from '../../data/types';
 import { toast } from 'sonner';
 import { violationApi, ViolationRecord } from '../../services/api';
@@ -97,12 +98,15 @@ const validateExamForm = (form: ExamFormData): string | null => {
 };
 
 export function TeacherExams() {
-  const { currentUser, classes, exams, submissions, addExam, updateExam, deleteExam, getSubmissionsByExam } = useApp();
+  const { currentUser, classes, exams, users, submissions, addExam, updateExam, deleteExam, getSubmissionsByExam } = useApp();
   const [showModal, setShowModal] = useState(false);
   const [editingExam, setEditingExam] = useState<Exam | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<string | null>(null);
   const [expandedExam, setExpandedExam] = useState<string | null>(null);
   const [filter, setFilter] = useState<'all' | ExamStatus>('all');
+
+  // Accommodations state
+  const [accommodationsExam, setAccommodationsExam] = useState<Exam | null>(null);
 
   // Anti-cheat violations viewer state
   const [violationsExam, setViolationsExam] = useState<Exam | null>(null);
@@ -268,6 +272,13 @@ export function TeacherExams() {
                   <div className="flex items-center gap-2 flex-shrink-0">
                     <button onClick={() => setExpandedExam(isExpanded ? null : exam.id)} className="p-2 rounded-lg hover:bg-gray-100 text-gray-400">
                       {isExpanded ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
+                    </button>
+                    <button
+                      onClick={() => setAccommodationsExam(exam)}
+                      title="Manage accommodations"
+                      className="p-2 rounded-lg hover:bg-blue-50 text-gray-500 hover:text-blue-600 transition-colors"
+                    >
+                      <UserCog className="w-4 h-4" />
                     </button>
                     <button
                       onClick={() => openViolations(exam)}
@@ -480,6 +491,13 @@ export function TeacherExams() {
           </div>
         </div>
       </Modal>
+
+      <ExamAccommodationsModal
+        exam={accommodationsExam}
+        classes={classes}
+        users={users}
+        onClose={() => setAccommodationsExam(null)}
+      />
 
       <ConfirmDialog isOpen={!!deleteTarget} onClose={() => setDeleteTarget(null)} onConfirm={async () => {
         if (deleteTarget) {

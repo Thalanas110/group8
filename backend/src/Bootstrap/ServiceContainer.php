@@ -34,6 +34,7 @@ use App\Services\ExamService;
 use App\Services\ReportService;
 use App\Services\ResultService;
 use App\Services\SeedService;
+use App\Services\StudentExamAccommodationService;
 use App\Services\Support\ExamMapper;
 use App\Services\Support\ExamPayloadValidator;
 use App\Services\Support\QuestionAnalyticsBuilder;
@@ -97,11 +98,19 @@ final class ServiceContainer
             normalizer: $normalizer,
         );
 
+        $studentExamAccommodationService = new StudentExamAccommodationService(
+            gateway: $gateway,
+            crypto: $crypto,
+            mapper: $mapper,
+            normalizer: $normalizer,
+        );
+
         $examService = new ExamService(
             gateway: $gateway,
             mapper: $mapper,
             normalizer: $normalizer,
             validator: $examPayloadValidator,
+            accommodationService: $studentExamAccommodationService,
         );
 
         $resultService = new ResultService(
@@ -109,6 +118,7 @@ final class ServiceContainer
             crypto: $crypto,
             mapper: $mapper,
             normalizer: $normalizer,
+            accommodationService: $studentExamAccommodationService,
         );
 
         $dataService = new DataService(

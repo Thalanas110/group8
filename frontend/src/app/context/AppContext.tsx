@@ -183,8 +183,12 @@ export function AppProvider({ children }: { children: ReactNode }) {
 
   const updateUser = (id: string, data: Partial<User>) => {
     setUsers(prev => prev.map(u => u.id === id ? { ...u, ...data } : u));
-    if (currentUser?.id === id) setCurrentUser(prev => prev ? { ...prev, ...data } : null);
-    userApi.update(id, data).catch(err => console.error('updateUser API error:', err));
+    if (currentUser?.id === id) {
+      setCurrentUser(prev => prev ? { ...prev, ...data } : null);
+      userApi.updateProfile(data).catch(err => console.error('updateProfile API error:', err));
+    } else {
+      userApi.update(id, data).catch(err => console.error('updateUser API error:', err));
+    }
   };
 
   const deleteUser = (id: string) => {

@@ -11,6 +11,7 @@ use App\Database\RoutineGateway;
 use App\Security\AesGcmCrypto;
 use App\Services\ResultService;
 use App\Services\SeedService;
+use App\Services\StudentExamAccommodationService;
 use App\Services\Support\ExamMapper;
 use App\Services\Support\ValueNormalizer;
 use App\Support\ApiException;
@@ -25,7 +26,8 @@ $mapper = new ExamMapper($crypto, $normalizer);
 $passwordHasher = new App\Security\PasswordHasher();
 $seedService = new SeedService($config, $gateway, $crypto, $passwordHasher, $normalizer);
 $seedService->bootstrap();
-$service = new ResultService($gateway, $crypto, $mapper, $normalizer);
+$accommodationService = new StudentExamAccommodationService($gateway, $crypto, $mapper, $normalizer);
+$service = new ResultService($gateway, $crypto, $mapper, $normalizer, $accommodationService);
 
 $studentRow = $gateway->call('sp_auth_get_user_by_email', ['student@examhub.local'])[0] ?? null;
 $examRow = null;

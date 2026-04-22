@@ -361,6 +361,40 @@ export const docsApi = {
   verify: () => request<ApiDocsVerifyResult>('GET', '/docs/verify', undefined, true),
 };
 
+// ─── Student Exam Accommodations ─────────────────────────────────────────────
+
+export interface AccommodationRecord {
+  examId: string;
+  studentId: string;
+  extraTimeMinutes: number;
+  attemptLimit: number | null;
+  alternateStartAt: string | null;
+  alternateEndAt: string | null;
+  accessibilityPreferences: string[];
+}
+
+export interface AccommodationPayload {
+  extraTimeMinutes: number;
+  attemptLimit: number | null;
+  alternateStartAt: string | null;
+  alternateEndAt: string | null;
+  accessibilityPreferences: string[];
+}
+
+export const accommodationApi = {
+  /** GET /api/exams/:examId/accommodations */
+  listByExam: (examId: string) =>
+    request<AccommodationRecord[]>('GET', `/exams/${examId}/accommodations`, undefined, true),
+
+  /** PUT /api/exams/:examId/accommodations/:studentId */
+  upsert: (examId: string, studentId: string, payload: AccommodationPayload) =>
+    request<AccommodationRecord>('PUT', `/exams/${examId}/accommodations/${studentId}`, payload, true),
+
+  /** DELETE /api/exams/:examId/accommodations/:studentId */
+  remove: (examId: string, studentId: string) =>
+    request<{ success: boolean }>('DELETE', `/exams/${examId}/accommodations/${studentId}`, undefined, true),
+};
+
 // ─── Anti-Cheat Violations ────────────────────────────────────────────────────
 
 export type ViolationType = 'tab_switch' | 'window_blur' | 'right_click' | 'auto_submitted';

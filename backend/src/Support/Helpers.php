@@ -38,12 +38,12 @@ final class Helpers
 
     /**
      * @param mixed $value
-     * @return array<int, mixed>
+     * @return array<int|string, mixed>
      */
-    public static function decodeJsonArray(mixed $value): array
+    public static function decodeJsonDocument(mixed $value): array
     {
         if (is_array($value)) {
-            return array_values($value);
+            return $value;
         }
 
         if (!is_string($value) || trim($value) === '') {
@@ -51,10 +51,15 @@ final class Helpers
         }
 
         $decoded = json_decode($value, true);
-        if (!is_array($decoded)) {
-            return [];
-        }
+        return is_array($decoded) ? $decoded : [];
+    }
 
-        return array_values($decoded);
+    /**
+     * @param mixed $value
+     * @return array<int, mixed>
+     */
+    public static function decodeJsonArray(mixed $value): array
+    {
+        return array_values(self::decodeJsonDocument($value));
     }
 }

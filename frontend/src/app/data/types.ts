@@ -50,6 +50,13 @@ export interface Exam {
   status: ExamStatus;
   questions: Question[];
   createdAt: string;
+  // Accommodation fields — populated by the backend for student users
+  extraTimeMinutes?: number;
+  attemptLimit?: number;
+  attemptsUsed?: number;
+  effectiveStartDate?: string;
+  effectiveEndDate?: string;
+  accessibilityPreferences?: string[];
 }
 
 export interface Answer {

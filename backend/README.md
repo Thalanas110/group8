@@ -20,6 +20,7 @@ This backend is a vanilla PHP 8+ JSON API that matches the frontend contract and
 - `users.bio_ciphertext`, `users.bio_iv`, `users.bio_tag`
 - `submissions.answers_json[*].answerCiphertext`, `answerIv`, `answerTag`
 - `submissions.feedback_ciphertext`, `submissions.feedback_iv`, `submissions.feedback_tag`
+- `student_exam_accommodations.accessibility_preferences_ciphertext`, `student_exam_accommodations.accessibility_preferences_iv`, `student_exam_accommodations.accessibility_preferences_tag`
 
 Legacy compatibility is still supported for:
 
@@ -36,6 +37,7 @@ Legacy compatibility is still supported for:
 - `POST /users` encrypts `department`, `phone`, `bio`
 - `PUT /users/:id` encrypts `department`, `phone`, `bio`
 - `POST /results/submit` encrypts each submitted answer
+- `PUT /exams/:id/accommodations/:studentId` encrypts `accessibilityPreferences`
 - `PUT /results/:id/grade` encrypts `feedback` and stores answer payloads in the split AES format
 
 ### Decryption Points
@@ -43,6 +45,8 @@ Legacy compatibility is still supported for:
 Decryption is centralized in `App\Services\Support\ExamMapper` before JSON is returned.
 
 - auth/profile/user reads decrypt department, phone, and bio
+- accommodation reads decrypt `accessibilityPreferences`
+- student exam reads expose decrypted accommodation summaries (`attemptLimit`, schedule overrides, and preferences)
 - result reads decrypt answers and feedback
 - legacy combined envelopes are still readable until repaired
 
@@ -61,7 +65,11 @@ Decryption is centralized in `App\Services\Support\ExamMapper` before JSON is re
 
 - Base schema and routines: `backend/database/schema_routines.sql`
 - AES split-storage add-on: `backend/database/schema_split_encrypted_storage.sql`
+- Student accommodations migration: `backend/database/migrate_add_student_exam_accommodations.sql`
+- Submission attempts migration: `backend/database/migrate_enable_submission_attempts.sql`
+- Question analytics migration: `backend/database/migrate_add_question_analytics.sql`
 - Logging schema and routines: `backend/database/logging_routines.sql`
+- Exam violations migration: `backend/database/migrate_add_exam_violations.sql`
 
 ## Setup
 
@@ -69,10 +77,14 @@ Decryption is centralized in `App\Services\Support\ExamMapper` before JSON is re
 
 1. Create `backend/.env` from `backend/.env.example`.
 2. Run `composer install` inside `backend/`.
-3. Import:
+3. Import, in order:
    - `schema_routines.sql`
    - `schema_split_encrypted_storage.sql`
+   - `migrate_add_question_analytics.sql`
+   - `migrate_add_student_exam_accommodations.sql`
+   - `migrate_enable_submission_attempts.sql`
    - `logging_routines.sql`
+   - `migrate_add_exam_violations.sql`
 4. Run `composer repair-encrypted-storage`.
 5. Ensure Apache rewrite is enabled and `/api/*` resolves to `api/index.php`.
 
@@ -89,6 +101,7 @@ The bootstrap script:
 
 - connects to your configured deployment databases
 - applies the repo SQL in the correct order
+- auto-discovers and applies every additive `migrate_*.sql` file
 - retargets the hardcoded local database names to the deployed database names
 - repairs legacy encrypted records after the split-storage schema is applied
 
@@ -156,13 +169,45 @@ If the database is empty and these credentials are missing, bootstrap requests w
 - Auth: `/auth/register`, `/auth/login`, `/auth/logout`
 - Users: `/users/profile`, `/users`, `/users/:id`
 - Exams: `/exams`, `/exams/:id`
-- Results: `/results/submit`, `/results/student/:id`, `/results/:id/grade`
+- Exam accommodations: `/exams/:id/accommodations`, `/exams/:id/accommodations/:studentId`
+- Results: `/results/start`, `/results/submit`, `/results/student/:id`, `/results/:id/grade`
 - Admin: `/admin/exams`, `/admin/results`
 - Reports: `/reports/exam-performance`, `/reports/pass-fail`, `/reports/question-analytics`
 - Classes: `/classes`, `/classes/join`, `/classes/:id/leave`, `/classes/:id/enroll`, `/classes/:id/students/:studentId`
 - Data: `/data/all`, `/data/reseed`
 - Docs: `/docs/verify`
 - Health: `/health`
+
+## Student Accommodations and Attempts
+
+- Accommodations are stored per `student + exam`.
+- Teacher/admin can set:
+  - `extraTimeMinutes`
+  - `alternateStartAt`
+  - `alternateEndAt`
+  - `attemptLimit`
+  - `accessibilityPreferences`
+- Student exam reads now include:
+  - `attemptLimit`
+  - `attemptsUsed`
+  - `extraTimeMinutes`
+  - `effectiveStartDate`
+  - `effectiveEndDate`
+  - `accessibilityPreferences`
+- Submission reads now include:
+  - `attemptNo`
+  - `startedAt`
+  - `allowedDurationMinutes`
+  - `effectiveWindowStartAt`
+  - `effectiveWindowEndAt`
+- `POST /results/start` creates a trusted in-progress attempt.
+- `POST /results/submit` supports:
+  - explicit submit by `submissionId`
+  - legacy compatibility submit by `examId`, which auto-starts and submits a new attempt
+- Timing enforcement:
+  - attempts must start inside the effective schedule window
+  - attempts expire if submitted after the effective schedule or after `startedAt + allowedDurationMinutes`
+  - attempt limits are enforced at start time
 
 ## Frontend Connection
 

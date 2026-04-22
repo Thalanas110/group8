@@ -28,11 +28,19 @@ final class SeedService
 
     public function bootstrap(): void
     {
-        $this->seedCoreAccounts();
-        if ($this->hasAnyClasses()) {
+        $existingUsers = $this->gateway->call('sp_users_get_all');
+        if ($existingUsers !== []) {
             return;
         }
 
+        if (!$this->hasSeedCredentialsConfigured()) {
+            throw new ApiException(
+                500,
+                'Seed credentials are missing. Configure SEED_ADMIN_*, SEED_TEACHER_*, and SEED_STUDENT_* in backend/.env.',
+            );
+        }
+
+        $this->seedCoreAccounts();
         $this->seedDemoData();
     }
 
@@ -51,18 +59,6 @@ final class SeedService
 
     private function seedCoreAccounts(): void
     {
-        if (!$this->hasSeedCredentialsConfigured()) {
-            $existingUsers = $this->gateway->call('sp_users_get_all');
-            if ($existingUsers !== []) {
-                return;
-            }
-
-            throw new ApiException(
-                500,
-                'Seed credentials are missing. Configure SEED_ADMIN_*, SEED_TEACHER_*, and SEED_STUDENT_* in backend/.env.',
-            );
-        }
-
         [$adminDepartmentCiphertext, $adminDepartmentIv, $adminDepartmentTag] = $this->crypto->encryptParams($this->config->seedAdminDepartment);
         [$teacherDepartmentCiphertext, $teacherDepartmentIv, $teacherDepartmentTag] = $this->crypto->encryptParams($this->config->seedTeacherDepartment);
         [$studentDepartmentCiphertext, $studentDepartmentIv, $studentDepartmentTag] = $this->crypto->encryptParams($this->config->seedStudentDepartment);
@@ -138,11 +134,6 @@ final class SeedService
             json_encode($questions, JSON_UNESCAPED_UNICODE),
             date('Y-m-d'),
         ]);
-    }
-
-    private function hasAnyClasses(): bool
-    {
-        return $this->gateway->call('sp_classes_get_all') !== [];
     }
 
     private function hasSeedCredentialsConfigured(): bool

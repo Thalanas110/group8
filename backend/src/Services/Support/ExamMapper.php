@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Services\Support;
 
 use App\Security\AesGcmCrypto;
+use App\Support\ApiException;
 use App\Support\Helpers;
 
 final class ExamMapper
@@ -143,14 +144,58 @@ final class ExamMapper
             'id' => (string) ($row['id'] ?? ''),
             'examId' => (string) ($row['examId'] ?? ''),
             'studentId' => (string) ($row['studentId'] ?? ''),
+            'attemptNo' => isset($row['attemptNo']) ? (int) $row['attemptNo'] : 1,
             'answers' => $normalizedAnswers,
             'totalScore' => isset($row['totalScore']) ? (float) $row['totalScore'] : null,
             'percentage' => isset($row['percentage']) ? (float) $row['percentage'] : null,
             'grade' => isset($row['grade']) ? (string) $row['grade'] : null,
             'feedback' => $this->decryptField($row, 'feedbackCiphertext', 'feedbackIv', 'feedbackTag', 'feedbackEnc'),
-            'submittedAt' => (string) ($row['submittedAt'] ?? ''),
+            'startedAt' => isset($row['startedAt']) ? (string) $row['startedAt'] : null,
+            'allowedDurationMinutes' => isset($row['allowedDurationMinutes']) ? (int) $row['allowedDurationMinutes'] : null,
+            'effectiveWindowStartAt' => isset($row['effectiveWindowStartAt']) ? (string) $row['effectiveWindowStartAt'] : null,
+            'effectiveWindowEndAt' => isset($row['effectiveWindowEndAt']) ? (string) $row['effectiveWindowEndAt'] : null,
+            'submittedAt' => isset($row['submittedAt']) ? (string) $row['submittedAt'] : null,
             'gradedAt' => isset($row['gradedAt']) ? (string) $row['gradedAt'] : null,
             'status' => (string) ($row['status'] ?? 'submitted'),
+        ];
+    }
+
+    /**
+     * @param array<string, mixed> $row
+     * @return array<string, mixed>
+     */
+    public function mapAccommodationRow(array $row): array
+    {
+        $preferences = [];
+        $ciphertext = $this->normalizer->nullableString($row['accessibilityPreferencesCiphertext'] ?? null);
+        $iv = $this->normalizer->nullableString($row['accessibilityPreferencesIv'] ?? null);
+        $tag = $this->normalizer->nullableString($row['accessibilityPreferencesTag'] ?? null);
+
+        if ($ciphertext !== null || $iv !== null || $tag !== null) {
+            $decrypted = $this->crypto->decryptFromParts($ciphertext, $iv, $tag);
+            if ($decrypted === null) {
+                throw new ApiException(500, 'Failed to decrypt accessibility preferences.');
+            }
+
+            $decoded = json_decode($decrypted, true);
+            if (!is_array($decoded)) {
+                throw new ApiException(500, 'Stored accessibility preferences are invalid.');
+            }
+
+            $preferences = $decoded;
+        }
+
+        return [
+            'id' => isset($row['id']) ? (int) $row['id'] : null,
+            'examId' => (string) ($row['examId'] ?? ''),
+            'studentId' => (string) ($row['studentId'] ?? ''),
+            'extraTimeMinutes' => (int) ($row['extraTimeMinutes'] ?? 0),
+            'alternateStartAt' => isset($row['alternateStartAt']) ? (string) $row['alternateStartAt'] : null,
+            'alternateEndAt' => isset($row['alternateEndAt']) ? (string) $row['alternateEndAt'] : null,
+            'attemptLimit' => isset($row['attemptLimit']) ? (int) $row['attemptLimit'] : null,
+            'accessibilityPreferences' => $preferences,
+            'createdAt' => isset($row['createdAt']) ? (string) $row['createdAt'] : null,
+            'updatedAt' => isset($row['updatedAt']) ? (string) $row['updatedAt'] : null,
         ];
     }
 

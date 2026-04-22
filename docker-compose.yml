@@ -8,7 +8,11 @@ services:
       - db_data:/var/lib/mysql
       - ./backend/database/schema_routines.sql:/docker-entrypoint-initdb.d/01-schema_routines.sql:ro
       - ./backend/database/schema_split_encrypted_storage.sql:/docker-entrypoint-initdb.d/02-schema_split_encrypted_storage.sql:ro
-      - ./backend/database/logging_routines.sql:/docker-entrypoint-initdb.d/03-logging_routines.sql:ro
+      - ./backend/database/migrate_add_question_analytics.sql:/docker-entrypoint-initdb.d/03-migrate_add_question_analytics.sql:ro
+      - ./backend/database/migrate_add_student_exam_accommodations.sql:/docker-entrypoint-initdb.d/04-migrate_add_student_exam_accommodations.sql:ro
+      - ./backend/database/migrate_enable_submission_attempts.sql:/docker-entrypoint-initdb.d/05-migrate_enable_submission_attempts.sql:ro
+      - ./backend/database/logging_routines.sql:/docker-entrypoint-initdb.d/06-logging_routines.sql:ro
+      - ./backend/database/migrate_add_exam_violations.sql:/docker-entrypoint-initdb.d/07-migrate_add_exam_violations.sql:ro
     healthcheck:
       test: ["CMD-SHELL", "mysqladmin ping -h 127.0.0.1 -uroot -p$$MYSQL_ROOT_PASSWORD || exit 1"]
       interval: 5s

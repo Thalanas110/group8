@@ -18,6 +18,7 @@ final class ExamService
         private ExamMapper $mapper,
         private ValueNormalizer $normalizer,
         private ExamPayloadValidator $validator,
+        private StudentExamAccommodationService $accommodationService,
     ) {
     }
 
@@ -32,7 +33,12 @@ final class ExamService
             $authUser['id'],
         ]);
 
-        return array_map(fn (array $row): array => $this->mapper->mapExamRow($row), $rows);
+        $exams = array_map(fn (array $row): array => $this->mapper->mapExamRow($row), $rows);
+        if (($authUser['role'] ?? '') === 'student') {
+            return $this->accommodationService->enrichStudentExams($exams, (string) $authUser['id']);
+        }
+
+        return $exams;
     }
 
     /**
@@ -52,7 +58,48 @@ final class ExamService
             throw new ApiException(404, 'Exam not found.');
         }
 
-        return $this->mapper->mapExamRow($row);
+        $exam = $this->mapper->mapExamRow($row);
+        if (($authUser['role'] ?? '') === 'student') {
+            return $this->accommodationService->enrichStudentExam($exam, (string) $authUser['id']);
+        }
+
+        return $exam;
+    }
+
+    /**
+     * @param array<string, mixed> $authUser
+     * @return array<int, array<string, mixed>>
+     */
+    public function getExamAccommodations(array $authUser, string $examId): array
+    {
+        return $this->accommodationService->getExamAccommodations($authUser, $examId);
+    }
+
+    /**
+     * @param array<string, mixed> $authUser
+     * @return array<string, mixed>
+     */
+    public function getExamAccommodation(array $authUser, string $examId, string $studentId): array
+    {
+        return $this->accommodationService->getExamAccommodation($authUser, $examId, $studentId);
+    }
+
+    /**
+     * @param array<string, mixed> $authUser
+     * @param array<string, mixed> $payload
+     * @return array<string, mixed>
+     */
+    public function upsertExamAccommodation(array $authUser, string $examId, string $studentId, array $payload): array
+    {
+        return $this->accommodationService->upsertExamAccommodation($authUser, $examId, $studentId, $payload);
+    }
+
+    /**
+     * @param array<string, mixed> $authUser
+     */
+    public function deleteExamAccommodation(array $authUser, string $examId, string $studentId): void
+    {
+        $this->accommodationService->deleteExamAccommodation($authUser, $examId, $studentId);
     }
 
     /**

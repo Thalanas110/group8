@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router';
-import { Clock, Search, CheckCircle2, AlertCircle, BookOpen, Calendar, ChevronDown } from 'lucide-react';
+import { Clock, Search, CheckCircle2, AlertCircle, BookOpen, Calendar, ChevronDown, UserCog } from 'lucide-react';
 import { useApp } from '../../context/AppContext';
 import { Badge, getStatusBadge } from '../../components/shared/Badge';
 
@@ -132,7 +132,10 @@ export function StudentExams() {
                   <div className="bg-gray-50 rounded-lg p-2.5 text-center">
                     <div className="text-xs text-gray-400">Duration</div>
                     <div className="text-sm font-semibold text-gray-900 flex items-center justify-center gap-1 mt-0.5">
-                      <Clock className="w-3.5 h-3.5" />{exam.duration} min
+                      <Clock className="w-3.5 h-3.5" />
+                      {(exam.extraTimeMinutes ?? 0) > 0
+                        ? `${exam.duration + (exam.extraTimeMinutes ?? 0)} min`
+                        : `${exam.duration} min`}
                     </div>
                   </div>
                   <div className="bg-gray-50 rounded-lg p-2.5 text-center">
@@ -148,6 +151,29 @@ export function StudentExams() {
                     <div className="text-sm font-semibold text-gray-900 mt-0.5">{exam.passingMarks}</div>
                   </div>
                 </div>
+
+                {/* Accommodation banner */}
+                {((exam.extraTimeMinutes ?? 0) > 0 || (exam.attemptLimit ?? 1) > 1 || exam.effectiveStartDate || (exam.accessibilityPreferences ?? []).length > 0) && (
+                  <div className="bg-blue-50 border border-blue-100 rounded-lg px-3 py-2 mb-4 flex items-start gap-2">
+                    <UserCog className="w-3.5 h-3.5 text-blue-500 flex-shrink-0 mt-0.5" />
+                    <div className="text-xs text-blue-700 space-y-0.5">
+                      {(exam.extraTimeMinutes ?? 0) > 0 && (
+                        <div>+{exam.extraTimeMinutes} min extra time</div>
+                      )}
+                      {(exam.attemptLimit ?? 1) > 1 && (
+                        <div>Up to {exam.attemptLimit} attempts ({exam.attemptsUsed ?? 0} used)</div>
+                      )}
+                      {exam.effectiveStartDate && exam.effectiveEndDate && (
+                        <div>
+                          Window: {new Date(exam.effectiveStartDate).toLocaleDateString()} {new Date(exam.effectiveStartDate).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })} – {new Date(exam.effectiveEndDate).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                        </div>
+                      )}
+                      {(exam.accessibilityPreferences ?? []).map(p => (
+                        <div key={p}>{p.replace(/_/g, ' ')}</div>
+                      ))}
+                    </div>
+                  </div>
+                )}
 
                 <div className="flex items-center gap-1.5 text-xs text-gray-400 mb-4">
                   <Calendar className="w-3.5 h-3.5" />
