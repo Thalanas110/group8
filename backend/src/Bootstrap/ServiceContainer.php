@@ -35,6 +35,7 @@ use App\Services\ReportService;
 use App\Services\ResultService;
 use App\Services\SeedService;
 use App\Services\StudentExamAccommodationService;
+use App\Services\ViolationCaseService;
 use App\Services\Support\ExamMapper;
 use App\Services\Support\ExamPayloadValidator;
 use App\Services\Support\QuestionAnalyticsBuilder;
@@ -170,6 +171,7 @@ final class ServiceContainer
             docsController: new DocsController($docsVerificationService),
             examViolationsController: new ExamViolationsController(
                 new ExamViolationService($logGateway),
+                new ViolationCaseService($logGateway),
             ),
         );
     }

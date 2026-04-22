@@ -17,6 +17,7 @@ import { TeacherClasses } from './pages/teacher/TeacherClasses';
 import { TeacherGrade } from './pages/teacher/TeacherGrade';
 import { TeacherProfile } from './pages/teacher/TeacherProfile';
 import { TeacherAnalytics } from './pages/teacher/TeacherAnalytics';
+import { TeacherViolationCases } from './pages/teacher/TeacherViolationCases';
 import { AdminLayout } from './pages/admin/AdminLayout';
 import { AdminDashboard } from './pages/admin/AdminDashboard';
 import { AdminExams } from './pages/admin/AdminExams';
@@ -52,6 +53,7 @@ export const router = createBrowserRouter([
       { path: 'classes', Component: TeacherClasses },
       { path: 'grade', Component: TeacherGrade },
       { path: 'analytics', Component: TeacherAnalytics },
+      { path: 'violation-cases', Component: TeacherViolationCases },
       { path: 'profile', Component: TeacherProfile },
     ],
   },

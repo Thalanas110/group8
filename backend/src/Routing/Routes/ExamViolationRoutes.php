@@ -31,5 +31,25 @@ final class ExamViolationRoutes
             true,
             ['teacher', 'admin'],
         );
+
+        // Teacher / admin views all case decisions for an exam
+        $router->add(
+            'GET',
+            '/exams/:id/violation-cases',
+            static fn (Request $request, array $params, ?array $authUser): array =>
+                $controller->listCases($params, $authUser ?? []),
+            true,
+            ['teacher', 'admin'],
+        );
+
+        // Teacher / admin creates or updates a case decision for a student
+        $router->add(
+            'PUT',
+            '/exams/:id/violation-cases/:studentId',
+            static fn (Request $request, array $params, ?array $authUser): array =>
+                $controller->upsertCase($request, $params, $authUser ?? []),
+            true,
+            ['teacher', 'admin'],
+        );
     }
 }

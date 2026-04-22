@@ -1,6 +1,6 @@
 import React, { useEffect } from 'react';
 import { useNavigate } from 'react-router';
-import { LayoutDashboard, FileText, Users, CheckSquare, User, BarChart2 } from 'lucide-react';
+import { LayoutDashboard, FileText, Users, CheckSquare, User, BarChart2, ShieldAlert } from 'lucide-react';
 import { useApp } from '../../context/AppContext';
 import { DashboardLayout } from '../../components/shared/DashboardLayout';
 
@@ -10,6 +10,7 @@ const navItems = [
   { path: '/teacher/classes', label: 'My Classes', icon: Users },
   { path: '/teacher/grade', label: 'Grade Exams', icon: CheckSquare },
   { path: '/teacher/analytics', label: 'Analytics', icon: BarChart2 },
+  { path: '/teacher/violation-cases', label: 'Case Review', icon: ShieldAlert },
   { path: '/teacher/profile', label: 'Profile', icon: User },
 ];
 
