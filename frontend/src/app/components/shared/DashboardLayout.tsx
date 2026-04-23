@@ -34,7 +34,7 @@ export function DashboardLayout({ navItems, roleLabel }: DashboardLayoutProps) {
     .slice(0, 2) || 'U';
 
   const SidebarContent = () => (
-    <div className="h-full rounded-[1.75rem] border border-gray-200 bg-white/85 shadow-[0_28px_56px_-36px_rgba(53,31,15,0.7)] backdrop-blur-xl flex flex-col overflow-hidden">
+    <div className="portal-sidebar h-full rounded-[1.75rem] border border-gray-200 bg-white/85 shadow-[0_28px_56px_-36px_rgba(53,31,15,0.7)] backdrop-blur-xl flex flex-col overflow-hidden">
       <div className="px-5 py-5 border-b border-gray-100">
         <div className="flex items-center gap-3">
           <div className="w-11 h-11 rounded-2xl bg-gray-900 flex items-center justify-center shadow-[0_12px_24px_-12px_rgba(51,26,10,0.8)]">
@@ -93,7 +93,7 @@ export function DashboardLayout({ navItems, roleLabel }: DashboardLayoutProps) {
   );
 
   return (
-    <div className="flex h-screen overflow-hidden">
+    <div className="portal-shell flex h-screen overflow-hidden">
       <div className="hidden lg:block w-[280px] xl:w-[300px] flex-shrink-0 p-3 xl:p-4">
         <div className="sticky top-3 xl:top-4 h-[calc(100vh-1.5rem)] xl:h-[calc(100vh-2rem)]">
           <SidebarContent />
@@ -118,7 +118,7 @@ export function DashboardLayout({ navItems, roleLabel }: DashboardLayoutProps) {
 
       <div className="flex-1 flex flex-col min-w-0 h-screen overflow-hidden">
         <header className="sticky top-0 z-30 px-3 pt-3 lg:px-4 lg:pt-4">
-          <div className="rounded-2xl border border-gray-200 bg-white/85 backdrop-blur-xl px-4 lg:px-5 py-3 flex items-center justify-between shadow-[0_20px_34px_-28px_rgba(53,31,15,0.65)]">
+          <div className="portal-topbar rounded-2xl border border-gray-200 bg-white/85 backdrop-blur-xl px-4 lg:px-5 py-3 flex items-center justify-between shadow-[0_20px_34px_-28px_rgba(53,31,15,0.65)]">
             <div className="flex items-center gap-3 min-w-0">
               <button
                 type="button"
@@ -146,7 +146,7 @@ export function DashboardLayout({ navItems, roleLabel }: DashboardLayoutProps) {
           </div>
         </header>
 
-        <main className="flex-1 overflow-y-auto overscroll-contain px-3 lg:px-4 pt-3 lg:pt-4 pb-4 lg:pb-6">
+        <main className="portal-scroll flex-1 overflow-y-auto overscroll-contain px-3 lg:px-4 pt-3 lg:pt-4 pb-4 lg:pb-6">
           <div className="w-full max-w-[1280px] mx-auto">
             <Outlet />
           </div>

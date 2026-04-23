@@ -35,9 +35,9 @@ function bootstrapPdo(string $host, int $port, string $database, string $user, s
 /**
  * @return array<int, string>
  */
-function discoverMigrationPaths(string $databaseDir): array
+function discoverSqlPaths(string $databaseDir, string $pattern): array
 {
-    $paths = glob($databaseDir . '/migrate_*.sql');
+    $paths = glob($databaseDir . '/' . $pattern);
     if (!is_array($paths)) {
         return [];
     }
@@ -49,6 +49,13 @@ function discoverMigrationPaths(string $databaseDir): array
 try {
     $env = new Env(__DIR__ . '/../.env');
     $config = AppConfig::fromEnv($env);
+    $databaseDir = __DIR__ . '/../database';
+    $primarySqlPaths = discoverSqlPaths($databaseDir, 'app_*.sql');
+    $logSqlPaths = discoverSqlPaths($databaseDir, 'logs_*.sql');
+
+    if ($primarySqlPaths === [] || $logSqlPaths === []) {
+        throw new RuntimeException('One or more ordered SQL file groups could not be discovered.');
+    }
 
     $primaryRunner = new SqlScriptRunner(
         bootstrapPdo(
@@ -60,36 +67,15 @@ try {
         ),
     );
 
-    $schemaSql = file_get_contents(__DIR__ . '/../database/schema_routines.sql');
-    $splitStorageSql = file_get_contents(__DIR__ . '/../database/schema_split_encrypted_storage.sql');
-    $loggingSql = file_get_contents(__DIR__ . '/../database/logging_routines.sql');
-    $migrationPaths = discoverMigrationPaths(__DIR__ . '/../database');
-
-    if ($schemaSql === false || $splitStorageSql === false || $loggingSql === false) {
-        throw new RuntimeException('One or more SQL bootstrap files could not be read.');
-    }
-
-    $primaryStatements = $primaryRunner->runScript(
-        SqlScriptRunner::retargetDatabase($schemaSql, 'examhub', $config->dbName),
-    );
-    $splitStatements = $primaryRunner->runScript(
-        SqlScriptRunner::retargetDatabase($splitStorageSql, 'examhub', $config->dbName),
-    );
-    $primaryMigrationStatements = 0;
-    $logMigrationStatements = 0;
-
-    foreach ($migrationPaths as $migrationPath) {
-        $migrationSql = file_get_contents($migrationPath);
-        if ($migrationSql === false) {
-            throw new RuntimeException(sprintf('Migration file could not be read: %s', basename($migrationPath)));
+    $primaryStatements = 0;
+    foreach ($primarySqlPaths as $sqlPath) {
+        $sql = file_get_contents($sqlPath);
+        if ($sql === false) {
+            throw new RuntimeException(sprintf('SQL file could not be read: %s', basename($sqlPath)));
         }
 
-        if (str_contains($migrationSql, 'USE examhub_logs')) {
-            continue;
-        }
-
-        $primaryMigrationStatements += $primaryRunner->runScript(
-            SqlScriptRunner::retargetDatabase($migrationSql, 'examhub', $config->dbName),
+        $primaryStatements += $primaryRunner->runScript(
+            SqlScriptRunner::retargetDatabase($sql, 'examhub', $config->dbName),
         );
     }
 
@@ -102,23 +88,18 @@ try {
             $config->logDbPass,
         ),
     );
-    $logStatements = $logRunner->runScript(
-        SqlScriptRunner::retargetDatabase($loggingSql, 'examhub_logs', $config->logDbName),
-    );
 
-    foreach ($migrationPaths as $migrationPath) {
-        $migrationSql = file_get_contents($migrationPath);
-        if ($migrationSql === false) {
-            throw new RuntimeException(sprintf('Migration file could not be read: %s', basename($migrationPath)));
+    $logStatements = 0;
+    foreach ($logSqlPaths as $sqlPath) {
+        $sql = file_get_contents($sqlPath);
+        if ($sql === false) {
+            throw new RuntimeException(sprintf('SQL file could not be read: %s', basename($sqlPath)));
         }
 
-        if (!str_contains($migrationSql, 'USE examhub_logs')) {
-            continue;
-        }
+        $retargetedSql = SqlScriptRunner::retargetDatabase($sql, 'examhub_logs', $config->logDbName);
+        $retargetedSql = SqlScriptRunner::retargetDatabase($retargetedSql, 'examhub', $config->dbName);
 
-        $logMigrationStatements += $logRunner->runScript(
-            SqlScriptRunner::retargetDatabase($migrationSql, 'examhub_logs', $config->logDbName),
-        );
+        $logStatements += $logRunner->runScript($retargetedSql);
     }
 
     $gateway = new RoutineGateway((new DbConnection($config))->pdo());
@@ -131,10 +112,7 @@ try {
 
     fwrite(STDOUT, "Database bootstrap completed.\n");
     fwrite(STDOUT, sprintf("Primary statements applied: %d\n", $primaryStatements));
-    fwrite(STDOUT, sprintf("Split-storage statements applied: %d\n", $splitStatements));
-    fwrite(STDOUT, sprintf("Primary migration statements applied: %d\n", $primaryMigrationStatements));
     fwrite(STDOUT, sprintf("Logging statements applied: %d\n", $logStatements));
-    fwrite(STDOUT, sprintf("Logging migration statements applied: %d\n", $logMigrationStatements));
     fwrite(STDOUT, sprintf("Users repaired: %d\n", $repairSummary['usersRepaired'] ?? 0));
     fwrite(STDOUT, sprintf("Submissions repaired: %d\n", $repairSummary['submissionsRepaired'] ?? 0));
     exit(0);

@@ -59,8 +59,8 @@ git commit -m "test: add encryption storage compatibility coverage"
 ### Task 2: Update the Schema and Stored Procedures
 
 **Files:**
-- Modify: `backend/database/schema_routines.sql`
-- Create: `backend/database/migrate_split_encrypted_storage.sql`
+- Modify: `backend/database/app_001_schema_routines.sql`
+- Create: `backend/database/app_002_schema_split_encrypted_storage.sql`
 - Test: `backend/tests/SecuritySmokeTest.php`
 
 - [ ] **Step 1: Write the failing test**
@@ -90,7 +90,7 @@ Expected: PASS for schema-dependent mapper expectations.
 - [ ] **Step 5: Commit**
 
 ```bash
-git add backend/database/schema_routines.sql backend/database/migrate_split_encrypted_storage.sql
+git add backend/database/app_001_schema_routines.sql backend/database/app_002_schema_split_encrypted_storage.sql
 git commit -m "feat: store encrypted fields as ciphertext iv tag"
 ```
 
@@ -141,7 +141,7 @@ git commit -m "feat: add structured encryption storage compatibility"
 - Create: `backend/src/Services/EncryptionRepairService.php`
 - Create: `backend/src/Services/Support/LegacyEncryptedDataRepair.php`
 - Create: `backend/scripts/repair_encrypted_storage.php`
-- Modify: `backend/database/schema_routines.sql`
+- Modify: `backend/database/app_001_schema_routines.sql`
 - Test: `backend/tests/EncryptionStorageCompatibilityTest.php`
 
 - [ ] **Step 1: Write the failing test**
@@ -169,7 +169,7 @@ Expected: PASS.
 - [ ] **Step 5: Commit**
 
 ```bash
-git add backend/src/Services/EncryptionRepairService.php backend/src/Services/Support/LegacyEncryptedDataRepair.php backend/scripts/repair_encrypted_storage.php backend/database/schema_routines.sql
+git add backend/src/Services/EncryptionRepairService.php backend/src/Services/Support/LegacyEncryptedDataRepair.php backend/scripts/repair_encrypted_storage.php backend/database/app_001_schema_routines.sql
 git commit -m "feat: add legacy encrypted record repair flow"
 ```
 

@@ -1,5 +1,5 @@
 -- Add-on schema for strict AES-256-GCM storage compliance.
--- Run this AFTER importing schema_routines.sql.
+-- Run this AFTER importing app_001_schema_routines.sql.
 -- Then run the repair script to convert legacy combined-string records.
 
 USE examhub;

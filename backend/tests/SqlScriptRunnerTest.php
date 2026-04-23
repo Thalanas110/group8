@@ -21,6 +21,7 @@ CREATE PROCEDURE sp_test()
 BEGIN
     SELECT 1;
     SELECT 2;
+    SELECT u.id FROM examhub.users u;
 END$$
 
 DELIMITER ;
@@ -37,6 +38,10 @@ if (str_contains($retargeted, 'CREATE DATABASE IF NOT EXISTS examhub')) {
 
 if (!str_contains($retargeted, 'USE `railway_prod`;')) {
     $failures[] = 'retargetDatabase should rewrite USE statements to the target database.';
+}
+
+if (!str_contains($retargeted, 'FROM `railway_prod`.users u')) {
+    $failures[] = 'retargetDatabase should rewrite qualified database references to the target database.';
 }
 
 $statements = SqlScriptRunner::splitStatements($retargeted);

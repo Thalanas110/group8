@@ -17,6 +17,7 @@ export function StatCard({ title, value, icon: Icon, trend, subtitle, onClick, i
 
   return (
     <div
+      data-ui="stat-card"
       className={`group relative overflow-hidden rounded-2xl border border-gray-200 bg-white p-5 shadow-[0_20px_38px_-34px_rgba(50,28,10,0.75)] ${
         onClick ? 'cursor-pointer transition-transform duration-200 hover:-translate-y-1' : ''
       }`}

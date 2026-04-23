@@ -13,7 +13,7 @@
 ### Task 1: Data Model and Validation
 
 **Files:**
-- Modify: `backend/database/schema_routines.sql`
+- Modify: `backend/database/app_001_schema_routines.sql`
 - Modify: `backend/src/Services/Support/ExamPayloadValidator.php`
 - Modify: `backend/src/Services/Support/ValueNormalizer.php`
 - Modify: `backend/src/Services/Support/ExamMapper.php`

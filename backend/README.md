@@ -63,13 +63,15 @@ Decryption is centralized in `App\Services\Support\ExamMapper` before JSON is re
 
 ## Database Files
 
-- Base schema and routines: `backend/database/schema_routines.sql`
-- AES split-storage add-on: `backend/database/schema_split_encrypted_storage.sql`
-- Student accommodations migration: `backend/database/migrate_add_student_exam_accommodations.sql`
-- Submission attempts migration: `backend/database/migrate_enable_submission_attempts.sql`
-- Question analytics migration: `backend/database/migrate_add_question_analytics.sql`
-- Logging schema and routines: `backend/database/logging_routines.sql`
-- Exam violations migration: `backend/database/migrate_add_exam_violations.sql`
+- App base schema and routines: `backend/database/app_001_schema_routines.sql`
+- App AES split-storage add-on: `backend/database/app_002_schema_split_encrypted_storage.sql`
+- App question analytics migration: `backend/database/app_003_migrate_add_question_analytics.sql`
+- App student accommodations migration: `backend/database/app_004_migrate_add_student_exam_accommodations.sql`
+- App submission attempts migration: `backend/database/app_005_migrate_enable_submission_attempts.sql`
+- Logs schema and routines: `backend/database/logs_001_logging_routines.sql`
+- Logs exam violations migration: `backend/database/logs_002_migrate_add_exam_violations.sql`
+- Logs violation cases migration: `backend/database/logs_003_migrate_add_violation_cases.sql`
+- Logs violation case procedure fix: `backend/database/logs_004_migrate_fix_violation_case_procedures.sql`
 
 ## Setup
 
@@ -78,13 +80,15 @@ Decryption is centralized in `App\Services\Support\ExamMapper` before JSON is re
 1. Create `backend/.env` from `backend/.env.example`.
 2. Run `composer install` inside `backend/`.
 3. Import, in order:
-   - `schema_routines.sql`
-   - `schema_split_encrypted_storage.sql`
-   - `migrate_add_question_analytics.sql`
-   - `migrate_add_student_exam_accommodations.sql`
-   - `migrate_enable_submission_attempts.sql`
-   - `logging_routines.sql`
-   - `migrate_add_exam_violations.sql`
+   - `app_001_schema_routines.sql`
+   - `app_002_schema_split_encrypted_storage.sql`
+   - `app_003_migrate_add_question_analytics.sql`
+   - `app_004_migrate_add_student_exam_accommodations.sql`
+   - `app_005_migrate_enable_submission_attempts.sql`
+   - `logs_001_logging_routines.sql`
+   - `logs_002_migrate_add_exam_violations.sql`
+   - `logs_003_migrate_add_violation_cases.sql`
+   - `logs_004_migrate_fix_violation_case_procedures.sql`
 4. Run `composer repair-encrypted-storage`.
 5. Ensure Apache rewrite is enabled and `/api/*` resolves to `api/index.php`.
 
@@ -101,48 +105,56 @@ The bootstrap script:
 
 - connects to your configured deployment databases
 - applies the repo SQL in the correct order
-- auto-discovers and applies every additive `migrate_*.sql` file
+- auto-discovers and applies ordered `app_*.sql` and `logs_*.sql` files
 - retargets the hardcoded local database names to the deployed database names
 - repairs legacy encrypted records after the split-storage schema is applied
 
-## Netlify + Render + Railway
+## Vercel + Render + Railway
 
 Recommended deployment split:
 
-- Netlify serves the frontend SPA
+- Vercel serves the frontend SPA
 - Render runs the PHP backend from [render.yaml](/C:/xampp/htdocs/group8/render.yaml)
+- Render runs the backend log-retention cron job from [render.yaml](/C:/xampp/htdocs/group8/render.yaml)
 - Railway provides MySQL
 
 ### Render Backend Notes
 
 - Runtime: Docker, using `docker/backend/Dockerfile`
 - Health check path: `/api/health`
+- Cron job: `examhub-log-retention`, daily at `00:00 UTC`
+- Database host: Railway MySQL external TCP proxy credentials in the `examhub-railway-mysql` Render environment group
 - Set `CORS_ALLOW_ALL=false`
-- Set `CORS_ALLOWED_ORIGINS` to your Netlify site URL
+- Set `CORS_ALLOWED_ORIGINS` to your Vercel site URL
 - Set the required seed credential env vars on first deploy if the database is empty
 
 ### Railway Database Notes
 
 For Railway, the simplest setup is:
 
+- `DB_HOST=<your Railway MYSQLHOST or TCP proxy host>`
+- `DB_PORT=<your Railway MYSQLPORT or TCP proxy port>`
 - `DB_NAME=<your Railway MYSQLDATABASE value>`
+- `DB_USER=<your Railway MYSQLUSER value>`
+- `DB_PASS=<your Railway MYSQLPASSWORD value>`
 - `LOG_DB_NAME=<same value as DB_NAME>`
 
 That keeps both application tables and fail-open logging tables in the same Railway database, which avoids needing a second hosted database name during first deployment.
 
-### Netlify Frontend Notes
+### Vercel Frontend Notes
 
-Set `VITE_PHP_BASE_URL` in Netlify to your Render backend URL, for example:
+Import the repo in Vercel with `frontend/` as the project root directory.
+Set `VITE_PHP_BASE_URL` in Vercel to your Render backend URL, for example:
 
 ```env
 VITE_PHP_BASE_URL=https://your-render-service.onrender.com/api
 ```
 
-The repo includes [netlify.toml](/C:/xampp/htdocs/group8/netlify.toml) for:
+The frontend includes [frontend/vercel.json](/C:/xampp/htdocs/group8/frontend/vercel.json) for:
 
-- monorepo base directory selection (`frontend/`)
 - Vite build command
-- SPA route rewrites to `index.html`
+- `dist/client` output directory
+- SPA route rewrites to `_shell.html`
 
 ## CORS
 
@@ -150,7 +162,7 @@ Environment variables:
 
 - `CORS_ALLOW_ALL=true` for local development
 - `CORS_ALLOW_ALL=false` in hosted environments
-- `CORS_ALLOWED_ORIGINS=https://your-site.netlify.app,https://www.example.com`
+- `CORS_ALLOWED_ORIGINS=https://your-site.vercel.app,https://www.example.com`
 
 When `CORS_ALLOW_ALL=false`, requests from unlisted origins are rejected.
 

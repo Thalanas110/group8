@@ -101,8 +101,8 @@ Decryption is centralized in `App\Services\Support\ExamMapper` before JSON is re
 ## Deployment Notes
 
 - Recommended hosted split:
-  - Netlify frontend
-  - Render backend
+  - Vercel frontend
+  - Render backend plus Render cron job
   - Railway MySQL
 - Render health check path: `/api/health`
 - Hosted bootstrap command:
@@ -119,13 +119,15 @@ composer bootstrap-database
 
 ### Database Files
 
-- Base schema: `backend/database/schema_routines.sql`
-- AES split-storage add-on schema: `backend/database/schema_split_encrypted_storage.sql`
-- Question analytics migration: `backend/database/migrate_add_question_analytics.sql`
-- Student accommodations migration: `backend/database/migrate_add_student_exam_accommodations.sql`
-- Submission attempts migration: `backend/database/migrate_enable_submission_attempts.sql`
-- Logging schema: `backend/database/logging_routines.sql`
-- Exam violations migration: `backend/database/migrate_add_exam_violations.sql`
+- App base schema: `backend/database/app_001_schema_routines.sql`
+- App AES split-storage add-on schema: `backend/database/app_002_schema_split_encrypted_storage.sql`
+- App question analytics migration: `backend/database/app_003_migrate_add_question_analytics.sql`
+- App student accommodations migration: `backend/database/app_004_migrate_add_student_exam_accommodations.sql`
+- App submission attempts migration: `backend/database/app_005_migrate_enable_submission_attempts.sql`
+- Logs schema: `backend/database/logs_001_logging_routines.sql`
+- Logs exam violations migration: `backend/database/logs_002_migrate_add_exam_violations.sql`
+- Logs violation cases migration: `backend/database/logs_003_migrate_add_violation_cases.sql`
+- Logs violation case procedure fix: `backend/database/logs_004_migrate_fix_violation_case_procedures.sql`
 
 ### Repair Step
 

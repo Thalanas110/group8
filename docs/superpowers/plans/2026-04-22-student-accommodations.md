@@ -84,8 +84,8 @@ git commit -m "test: add student accommodation and attempt flow coverage"
 ### Task 2: Add New SQL Migration Files For Accommodations And Attempts
 
 **Files:**
-- Create: `backend/database/migrate_add_student_exam_accommodations.sql`
-- Create: `backend/database/migrate_enable_submission_attempts.sql`
+- Create: `backend/database/app_004_migrate_add_student_exam_accommodations.sql`
+- Create: `backend/database/app_005_migrate_enable_submission_attempts.sql`
 - Modify: `backend/scripts/bootstrap_database.php`
 - Modify: `docker-compose.yml`
 - Test: `backend/tests/StudentExamAccommodationServiceTest.php`
@@ -133,7 +133,7 @@ Expected: schema/bootstrap succeeds, tests still fail at missing PHP behavior ra
 - [ ] **Step 5: Commit**
 
 ```bash
-git add backend/database/migrate_add_student_exam_accommodations.sql backend/database/migrate_enable_submission_attempts.sql backend/scripts/bootstrap_database.php docker-compose.yml
+git add backend/database/app_004_migrate_add_student_exam_accommodations.sql backend/database/app_005_migrate_enable_submission_attempts.sql backend/scripts/bootstrap_database.php docker-compose.yml
 git commit -m "feat: add accommodation and attempt schema migrations"
 ```
 

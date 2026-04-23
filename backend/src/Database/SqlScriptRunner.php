@@ -102,11 +102,31 @@ final class SqlScriptRunner
             preg_quote($sourceDatabase, '/'),
         );
 
-        return (string) preg_replace(
+        $sql = (string) preg_replace(
             $usePattern,
             'USE ' . self::quoteIdentifier($targetDatabase) . ";\n\n",
             $sql,
             1,
+        );
+
+        $quotedQualifiedPattern = sprintf(
+            '/`%s`\s*\./i',
+            preg_quote($sourceDatabase, '/'),
+        );
+        $sql = (string) preg_replace(
+            $quotedQualifiedPattern,
+            self::quoteIdentifier($targetDatabase) . '.',
+            $sql,
+        );
+
+        $qualifiedPattern = sprintf(
+            '/\b%s\s*\./i',
+            preg_quote($sourceDatabase, '/'),
+        );
+        return (string) preg_replace(
+            $qualifiedPattern,
+            self::quoteIdentifier($targetDatabase) . '.',
+            $sql,
         );
     }
 

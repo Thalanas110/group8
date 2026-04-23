@@ -6,31 +6,19 @@ services:
     dockerfilePath: ./docker/backend/Dockerfile
     healthCheckPath: /api/health
     autoDeployTrigger: commit
+    buildFilter:
+      paths:
+        - api/**
+        - backend/**
+        - docker/backend/**
+        - .dockerignore
+        - render.yaml
+      ignoredPaths:
+        - frontend/**
+        - docs/**
     envVars:
-      - key: DB_HOST
-        sync: false
-      - key: DB_PORT
-        sync: false
-      - key: DB_NAME
-        sync: false
-      - key: DB_USER
-        sync: false
-      - key: DB_PASS
-        sync: false
-      - key: LOG_DB_NAME
-        sync: false
-      - key: APP_JWT_SECRET
-        generateValue: true
-      - key: APP_ENCRYPTION_KEY
-        generateValue: true
-      - key: AUTH_TOKEN_TTL_SECONDS
-        value: "28800"
-      - key: LOG_RETENTION_DAYS
-        value: "90"
-      - key: CORS_ALLOW_ALL
-        value: "false"
-      - key: CORS_ALLOWED_ORIGINS
-        sync: false
+      - fromGroup: examhub-railway-mysql
+      - fromGroup: examhub-render-runtime
       - key: SEED_ADMIN_EMAIL
         sync: false
       - key: SEED_ADMIN_PASSWORD
@@ -42,4 +30,57 @@ services:
       - key: SEED_STUDENT_EMAIL
         sync: false
       - key: SEED_STUDENT_PASSWORD
+        sync: false
+  - type: cron
+    name: examhub-log-retention
+    runtime: docker
+    dockerContext: .
+    dockerfilePath: ./docker/backend/Dockerfile
+    dockerCommand: php /var/www/html/backend/scripts/purge_log_retention.php
+    schedule: "0 0 * * *"
+    autoDeployTrigger: commit
+    buildFilter:
+      paths:
+        - api/**
+        - backend/**
+        - docker/backend/**
+        - .dockerignore
+        - render.yaml
+      ignoredPaths:
+        - frontend/**
+        - docs/**
+    envVars:
+      - fromGroup: examhub-railway-mysql
+      - fromGroup: examhub-render-runtime
+
+envVarGroups:
+  - name: examhub-railway-mysql
+    envVars:
+      # Railway MySQL external TCP proxy credentials.
+      - key: DB_HOST
+        sync: false
+      - key: DB_PORT
+        sync: false
+      - key: DB_NAME
+        sync: false
+      - key: DB_USER
+        sync: false
+      - key: DB_PASS
+        sync: false
+      # Set to DB_NAME when app and logs tables share one Railway MySQL database.
+      - key: LOG_DB_NAME
+        sync: false
+  - name: examhub-render-runtime
+    envVars:
+      - key: APP_JWT_SECRET
+        generateValue: true
+      - key: APP_ENCRYPTION_KEY
+        generateValue: true
+      - key: AUTH_TOKEN_TTL_SECONDS
+        value: "28800"
+      - key: LOG_RETENTION_DAYS
+        value: "90"
+      - key: CORS_ALLOW_ALL
+        value: "false"
+      - key: CORS_ALLOWED_ORIGINS
         sync: false
