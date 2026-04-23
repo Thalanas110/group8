@@ -72,6 +72,7 @@ Decryption is centralized in `App\Services\Support\ExamMapper` before JSON is re
 - Logs exam violations migration: `backend/database/logs_002_migrate_add_exam_violations.sql`
 - Logs violation cases migration: `backend/database/logs_003_migrate_add_violation_cases.sql`
 - Logs violation case procedure fix: `backend/database/logs_004_migrate_fix_violation_case_procedures.sql`
+- Logs admin read-model routines: `backend/database/logs_005_admin_log_read_models.sql`
 
 ## Setup
 
@@ -89,6 +90,7 @@ Decryption is centralized in `App\Services\Support\ExamMapper` before JSON is re
    - `logs_002_migrate_add_exam_violations.sql`
    - `logs_003_migrate_add_violation_cases.sql`
    - `logs_004_migrate_fix_violation_case_procedures.sql`
+   - `logs_005_admin_log_read_models.sql`
 4. Run `composer repair-encrypted-storage`.
 5. Ensure Apache rewrite is enabled and `/api/*` resolves to `api/index.php`.
 
@@ -187,7 +189,7 @@ If the database is empty and these credentials are missing, bootstrap requests w
 - Exams: `/exams`, `/exams/:id`
 - Exam accommodations: `/exams/:id/accommodations`, `/exams/:id/accommodations/:studentId`
 - Results: `/results/start`, `/results/submit`, `/results/student/:id`, `/results/:id/grade`
-- Admin: `/admin/exams`, `/admin/results`
+- Admin: `/admin/exams`, `/admin/results`, `/admin/logs`, `/admin/violations`
 - Reports: `/reports/exam-performance`, `/reports/pass-fail`, `/reports/question-analytics`
 - Classes: `/classes`, `/classes/join`, `/classes/:id/leave`, `/classes/:id/enroll`, `/classes/:id/students/:studentId`
 - Data: `/data/all`, `/data/reseed`

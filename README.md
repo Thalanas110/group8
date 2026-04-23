@@ -30,6 +30,7 @@ The local MySQL container now initializes from:
 - `backend/database/logs_002_migrate_add_exam_violations.sql`
 - `backend/database/logs_003_migrate_add_violation_cases.sql`
 - `backend/database/logs_004_migrate_fix_violation_case_procedures.sql`
+- `backend/database/logs_005_admin_log_read_models.sql`
 
 Useful commands:
 

@@ -15,6 +15,7 @@ services:
       - ./backend/database/logs_002_migrate_add_exam_violations.sql:/docker-entrypoint-initdb.d/07-logs_002_migrate_add_exam_violations.sql:ro
       - ./backend/database/logs_003_migrate_add_violation_cases.sql:/docker-entrypoint-initdb.d/08-logs_003_migrate_add_violation_cases.sql:ro
       - ./backend/database/logs_004_migrate_fix_violation_case_procedures.sql:/docker-entrypoint-initdb.d/09-logs_004_migrate_fix_violation_case_procedures.sql:ro
+      - ./backend/database/logs_005_admin_log_read_models.sql:/docker-entrypoint-initdb.d/10-logs_005_admin_log_read_models.sql:ro
     healthcheck:
       test: ["CMD-SHELL", "mysqladmin ping -h 127.0.0.1 -uroot -p$$MYSQL_ROOT_PASSWORD || exit 1"]
       interval: 5s

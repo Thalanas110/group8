@@ -128,6 +128,7 @@ composer bootstrap-database
 - Logs exam violations migration: `backend/database/logs_002_migrate_add_exam_violations.sql`
 - Logs violation cases migration: `backend/database/logs_003_migrate_add_violation_cases.sql`
 - Logs violation case procedure fix: `backend/database/logs_004_migrate_fix_violation_case_procedures.sql`
+- Logs admin read-model routines: `backend/database/logs_005_admin_log_read_models.sql`
 
 ### Repair Step
 
@@ -233,6 +234,8 @@ Submission/result reads include:
 | PUT | `/api/results/{id}/grade` | Grade a submission |
 | GET | `/api/admin/exams` | Admin exams overview |
 | GET | `/api/admin/results` | Admin results overview |
+| GET | `/api/admin/logs` | Admin request and audit logs |
+| GET | `/api/admin/violations` | Admin anti-cheat violation dashboard |
 | GET | `/api/reports/exam-performance` | Exam performance report |
 | GET | `/api/reports/pass-fail` | Pass/fail report |
 | GET | `/api/data/all` | Role-filtered aggregate data |

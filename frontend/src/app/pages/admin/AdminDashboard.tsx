@@ -1,6 +1,6 @@
 import React from 'react';
 import { useNavigate } from 'react-router';
-import { Users, FileText, Clipboard, TrendingUp, ArrowRight, Code2, BarChart2 } from 'lucide-react';
+import { Users, FileText, Clipboard, TrendingUp, ArrowRight, Code2, BarChart2, ScrollText, ShieldAlert } from 'lucide-react';
 import { useApp } from '../../context/AppContext';
 import { StatCard } from '../../components/shared/StatCard';
 import { Badge, getStatusBadge } from '../../components/shared/Badge';
@@ -109,11 +109,13 @@ export function AdminDashboard() {
       </div>
 
       {/* Quick Links */}
-      <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
+      <div className="grid grid-cols-2 md:grid-cols-4 xl:grid-cols-7 gap-3">
         {[
           { label: 'Users', icon: Users, path: '/admin/users' },
           { label: 'Exams', icon: FileText, path: '/admin/exams' },
           { label: 'Results', icon: Clipboard, path: '/admin/results' },
+          { label: 'Violations', icon: ShieldAlert, path: '/admin/violations' },
+          { label: 'Logs', icon: ScrollText, path: '/admin/logs' },
           { label: 'Reports', icon: BarChart2, path: '/admin/reports' },
           { label: 'API Docs', icon: Code2, path: '/admin/api' },
         ].map(item => (

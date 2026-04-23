@@ -19,6 +19,7 @@ use App\Controllers\ResultsController;
 use App\Controllers\UsersController;
 use App\Database\LogDbConnection;
 use App\Database\RoutineGateway;
+use App\Logging\AdminLogReadService;
 use App\Logging\AuditLogService;
 use App\Logging\ExamViolationService;
 use App\Logging\LogRetentionService;
@@ -165,7 +166,10 @@ final class ServiceContainer
             classesController: new ClassesController($classService),
             examsController: new ExamsController($examService),
             resultsController: new ResultsController($resultService),
-            adminController: new AdminController($reportService),
+            adminController: new AdminController(
+                $reportService,
+                new AdminLogReadService($logGateway),
+            ),
             reportsController: new ReportsController($reportService),
             dataController: new DataController($dataService, $seedService),
             docsController: new DocsController($docsVerificationService),

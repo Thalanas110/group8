@@ -174,6 +174,32 @@ export const API_ENDPOINTS: EndpointDoc[] = [
     responseExample: [{ id: 's1', studentName: 'Alice Smith', examTitle: 'Algebra Midterm', percentage: 87, grade: 'A', status: 'graded' }],
   },
   {
+    id: 'admin-logs',
+    method: 'GET',
+    path: '/api/admin/logs',
+    group: 'Admin & Reporting',
+    description: 'Admin: inspect recent request logs and audit logs from the logging database.',
+    auth: true,
+    role: 'admin',
+    responseExample: {
+      requestSummary: { totalRequests: 42, failedRequests: 2, averageDurationMs: 31 },
+      requestLogs: [{ method: 'GET', path: '/api/health', statusCode: 200, durationMs: 8 }],
+    },
+  },
+  {
+    id: 'admin-violations',
+    method: 'GET',
+    path: '/api/admin/violations',
+    group: 'Admin & Reporting',
+    description: 'Admin: view anti-cheat violation summaries across all exams and case outcomes.',
+    auth: true,
+    role: 'admin',
+    responseExample: {
+      summary: { totalViolations: 8, impactedStudents: 3, pendingCases: 2 },
+      rows: [{ examTitle: 'Algebra Midterm', studentName: 'Alice Smith', violationCount: 3, outcome: 'pending' }],
+    },
+  },
+  {
     id: 'reports-performance',
     method: 'GET',
     path: '/api/reports/exam-performance',

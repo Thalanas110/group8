@@ -1,4 +1,5 @@
 import { createBrowserRouter, Navigate } from 'react-router';
+import { RouterErrorPage } from './components/shared/RouterErrorPage';
 import { Login } from './pages/auth/Login';
 import { Register } from './pages/auth/Register';
 import { Landing } from './pages/public/Landing';
@@ -26,16 +27,20 @@ import { AdminReports } from './pages/admin/AdminReports';
 import { AdminUsers } from './pages/admin/AdminUsers';
 import { AdminProfile } from './pages/admin/AdminProfile';
 import { AdminApiReference } from './pages/admin/AdminApiReference';
+import { AdminLogs } from './pages/admin/AdminLogs';
+import { AdminViolations } from './pages/admin/AdminViolations';
 
 export function createAppRouter() {
   return createBrowserRouter([
-    { path: '/', Component: Landing },
-    { path: '/login', Component: Login },
-    { path: '/register', Component: Register },
-    { path: '/preview/take-exam', Component: ExamTakingPreview },
+    { path: '/', Component: Landing, errorElement: <RouterErrorPage /> },
+    { path: '/login', Component: Login, errorElement: <RouterErrorPage /> },
+    { path: '/register', Component: Register, errorElement: <RouterErrorPage /> },
+
+    { path: '/preview/take-exam', Component: ExamTakingPreview, errorElement: <RouterErrorPage /> },
     {
       path: '/student',
       Component: StudentLayout,
+      errorElement: <RouterErrorPage />,
       children: [
         { index: true, Component: StudentDashboard },
         { path: 'exams', Component: StudentExams },
@@ -48,6 +53,7 @@ export function createAppRouter() {
     {
       path: '/teacher',
       Component: TeacherLayout,
+      errorElement: <RouterErrorPage />,
       children: [
         { index: true, Component: TeacherDashboard },
         { path: 'exams', Component: TeacherExams },
@@ -61,11 +67,14 @@ export function createAppRouter() {
     {
       path: '/admin',
       Component: AdminLayout,
+      errorElement: <RouterErrorPage />,
       children: [
         { index: true, Component: AdminDashboard },
         { path: 'users', Component: AdminUsers },
         { path: 'exams', Component: AdminExams },
         { path: 'results', Component: AdminResults },
+        { path: 'violations', Component: AdminViolations },
+        { path: 'logs', Component: AdminLogs },
         { path: 'reports', Component: AdminReports },
         { path: 'api', Component: AdminApiReference },
         { path: 'profile', Component: AdminProfile },

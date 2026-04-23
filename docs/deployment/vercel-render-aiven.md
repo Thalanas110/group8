@@ -48,6 +48,7 @@ Manual Aiven SQL import order for the logs database:
 2. `backend/database/logs_002_migrate_add_exam_violations.sql`
 3. `backend/database/logs_003_migrate_add_violation_cases.sql`
 4. `backend/database/logs_004_migrate_fix_violation_case_procedures.sql`
+5. `backend/database/logs_005_admin_log_read_models.sql`
 
 ## 2. Render Backend
 

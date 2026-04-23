@@ -4,12 +4,15 @@ declare(strict_types=1);
 
 namespace App\Controllers;
 
+use App\Logging\AdminLogReadService;
 use App\Services\ReportService;
 
 final class AdminController
 {
-    public function __construct(private ReportService $reportService)
-    {
+    public function __construct(
+        private ReportService $reportService,
+        private AdminLogReadService $adminLogReadService,
+    ) {
     }
 
     /**
@@ -26,5 +29,21 @@ final class AdminController
     public function getAdminResults(): array
     {
         return ['status' => 200, 'data' => $this->reportService->getAdminResults()];
+    }
+
+    /**
+     * @return array{status: int, data: array<string, mixed>}
+     */
+    public function getAdminLogs(): array
+    {
+        return ['status' => 200, 'data' => $this->adminLogReadService->getLogs()];
+    }
+
+    /**
+     * @return array{status: int, data: array<string, mixed>}
+     */
+    public function getAdminViolations(): array
+    {
+        return ['status' => 200, 'data' => $this->adminLogReadService->getViolationDashboard()];
     }
 }
