@@ -27,48 +27,50 @@ import { AdminUsers } from './pages/admin/AdminUsers';
 import { AdminProfile } from './pages/admin/AdminProfile';
 import { AdminApiReference } from './pages/admin/AdminApiReference';
 
-export const router = createBrowserRouter([
-  { path: '/', Component: Landing },
-  { path: '/login', Component: Login },
-  { path: '/register', Component: Register },
-  { path: '/preview/take-exam', Component: ExamTakingPreview },
-  {
-    path: '/student',
-    Component: StudentLayout,
-    children: [
-      { index: true, Component: StudentDashboard },
-      { path: 'exams', Component: StudentExams },
-      { path: 'results', Component: StudentResults },
-      { path: 'classes', Component: StudentClasses },
-      { path: 'profile', Component: StudentProfile },
-      { path: 'take-exam/:examId', Component: TakeExam },
-    ],
-  },
-  {
-    path: '/teacher',
-    Component: TeacherLayout,
-    children: [
-      { index: true, Component: TeacherDashboard },
-      { path: 'exams', Component: TeacherExams },
-      { path: 'classes', Component: TeacherClasses },
-      { path: 'grade', Component: TeacherGrade },
-      { path: 'analytics', Component: TeacherAnalytics },
-      { path: 'violation-cases', Component: TeacherViolationCases },
-      { path: 'profile', Component: TeacherProfile },
-    ],
-  },
-  {
-    path: '/admin',
-    Component: AdminLayout,
-    children: [
-      { index: true, Component: AdminDashboard },
-      { path: 'users', Component: AdminUsers },
-      { path: 'exams', Component: AdminExams },
-      { path: 'results', Component: AdminResults },
-      { path: 'reports', Component: AdminReports },
-      { path: 'api', Component: AdminApiReference },
-      { path: 'profile', Component: AdminProfile },
-    ],
-  },
-  { path: '*', element: <Navigate to="/" replace /> },
-]);
+export function createAppRouter() {
+  return createBrowserRouter([
+    { path: '/', Component: Landing },
+    { path: '/login', Component: Login },
+    { path: '/register', Component: Register },
+    { path: '/preview/take-exam', Component: ExamTakingPreview },
+    {
+      path: '/student',
+      Component: StudentLayout,
+      children: [
+        { index: true, Component: StudentDashboard },
+        { path: 'exams', Component: StudentExams },
+        { path: 'results', Component: StudentResults },
+        { path: 'classes', Component: StudentClasses },
+        { path: 'profile', Component: StudentProfile },
+        { path: 'take-exam/:examId', Component: TakeExam },
+      ],
+    },
+    {
+      path: '/teacher',
+      Component: TeacherLayout,
+      children: [
+        { index: true, Component: TeacherDashboard },
+        { path: 'exams', Component: TeacherExams },
+        { path: 'classes', Component: TeacherClasses },
+        { path: 'grade', Component: TeacherGrade },
+        { path: 'analytics', Component: TeacherAnalytics },
+        { path: 'violation-cases', Component: TeacherViolationCases },
+        { path: 'profile', Component: TeacherProfile },
+      ],
+    },
+    {
+      path: '/admin',
+      Component: AdminLayout,
+      children: [
+        { index: true, Component: AdminDashboard },
+        { path: 'users', Component: AdminUsers },
+        { path: 'exams', Component: AdminExams },
+        { path: 'results', Component: AdminResults },
+        { path: 'reports', Component: AdminReports },
+        { path: 'api', Component: AdminApiReference },
+        { path: 'profile', Component: AdminProfile },
+      ],
+    },
+    { path: '*', element: <Navigate to="/" replace /> },
+  ]);
+}
