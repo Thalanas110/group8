@@ -19,6 +19,7 @@ import { TeacherGrade } from './pages/teacher/TeacherGrade';
 import { TeacherProfile } from './pages/teacher/TeacherProfile';
 import { TeacherAnalytics } from './pages/teacher/TeacherAnalytics';
 import { TeacherViolationCases } from './pages/teacher/TeacherViolationCases';
+import { TeacherTools } from './pages/teacher/TeacherTools';
 import { AdminLayout } from './pages/admin/AdminLayout';
 import { AdminDashboard } from './pages/admin/AdminDashboard';
 import { AdminExams } from './pages/admin/AdminExams';
@@ -29,6 +30,7 @@ import { AdminProfile } from './pages/admin/AdminProfile';
 import { AdminApiReference } from './pages/admin/AdminApiReference';
 import { AdminLogs } from './pages/admin/AdminLogs';
 import { AdminViolations } from './pages/admin/AdminViolations';
+import { AdminTools } from './pages/admin/AdminTools';
 
 export function createAppRouter() {
   return createBrowserRouter([
@@ -60,6 +62,7 @@ export function createAppRouter() {
         { path: 'classes', Component: TeacherClasses },
         { path: 'grade', Component: TeacherGrade },
         { path: 'analytics', Component: TeacherAnalytics },
+        { path: 'tools', Component: TeacherTools },
         { path: 'violation-cases', Component: TeacherViolationCases },
         { path: 'profile', Component: TeacherProfile },
       ],
@@ -76,6 +79,7 @@ export function createAppRouter() {
         { path: 'violations', Component: AdminViolations },
         { path: 'logs', Component: AdminLogs },
         { path: 'reports', Component: AdminReports },
+        { path: 'tools', Component: AdminTools },
         { path: 'api', Component: AdminApiReference },
         { path: 'profile', Component: AdminProfile },
       ],

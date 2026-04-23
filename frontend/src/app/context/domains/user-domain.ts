@@ -10,10 +10,21 @@ type UserDomainDeps = AppStateSetters & Pick<AppDomainState, 'currentUser'>;
 
 export function createUserDomain(deps: UserDomainDeps) {
   return {
-    addUser(userData: Omit<User, 'id'>) {
+    async addUser(userData: Omit<User, 'id'>): Promise<User> {
       const newUser: User = { ...userData, id: generateId() };
       deps.setUsers(previous => [...previous, newUser]);
-      userApi.create(newUser).catch(error => console.error('addUser API error:', error));
+
+      try {
+        const created = (await userApi.create(newUser)) as User;
+        const syncedUser = { ...newUser, ...created };
+        deps.setUsers(previous =>
+          previous.map(user => (user.id === newUser.id ? syncedUser : user)),
+        );
+        return syncedUser;
+      } catch (error) {
+        console.error('addUser API error:', error);
+        return newUser;
+      }
     },
 
     updateUser(id: string, data: Partial<User>) {

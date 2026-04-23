@@ -11,7 +11,7 @@ export interface AppContextType {
   classes: Class[];
   exams: Exam[];
   submissions: Submission[];
-  addUser: (user: Omit<User, 'id'>) => void;
+  addUser: (user: Omit<User, 'id'>) => Promise<User>;
   updateUser: (id: string, data: Partial<User>) => void;
   deleteUser: (id: string) => void;
   addClass: (cls: Omit<Class, 'id' | 'createdAt' | 'studentIds'>) => Class;
