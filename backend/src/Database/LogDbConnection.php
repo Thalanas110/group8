@@ -21,22 +21,15 @@ final class LogDbConnection
             return $this->pdo;
         }
 
-        $dsn = sprintf(
-            'mysql:host=%s;port=%d;dbname=%s;charset=utf8mb4',
+        $this->pdo = MysqlPdoFactory::create(
             $this->config->logDbHost,
             $this->config->logDbPort,
             $this->config->logDbName,
-        );
-
-        $this->pdo = new PDO(
-            $dsn,
             $this->config->logDbUser,
             $this->config->logDbPass,
-            [
-                PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
-                PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
-                PDO::ATTR_EMULATE_PREPARES => false,
-            ],
+            $this->config->logDbSslMode,
+            $this->config->logDbSslCa,
+            false,
         );
 
         return $this->pdo;

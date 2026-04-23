@@ -18,6 +18,7 @@ import {
 } from '../../services/api';
 import { EmptyState } from '../../features/analytics/question-analytics/components/EmptyState';
 import { ListCard } from '../../features/analytics/question-analytics/components/ListCard';
+import { PaginatedTable } from '../shared/PaginatedTable';
 import {
   filterQuestions,
   filterWeakTopics,
@@ -314,8 +315,12 @@ export function QuestionAnalyticsSection({ audienceLabel }: QuestionAnalyticsSec
             <EmptyState title="No question analytics yet" body="Once graded submissions and tagged questions exist, this ledger will populate automatically." />
           </div>
         ) : (
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm">
+          <PaginatedTable
+            items={filteredQuestions}
+            colSpan={6}
+            minWidthClassName="min-w-[920px]"
+            bodyClassName="divide-y divide-gray-100"
+            header={(
               <thead className="bg-gray-50">
                 <tr className="text-left text-xs uppercase tracking-[0.16em] text-gray-400">
                   <th className="px-5 py-3 font-medium">Question</th>
@@ -326,8 +331,9 @@ export function QuestionAnalyticsSection({ audienceLabel }: QuestionAnalyticsSec
                   <th className="px-5 py-3 font-medium">Coverage</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-gray-100">
-                {filteredQuestions.map((question: QuestionAnalyticsQuestion) => (
+            )}
+            emptyRow={<div className="px-5 py-8 text-center text-gray-400 text-sm">No question analytics yet</div>}
+            renderRow={(question: QuestionAnalyticsQuestion) => (
                   <tr key={`${question.examId}-${question.questionId}`} className="hover:bg-gray-50/70">
                     <td className="px-5 py-4">
                       <div className="font-medium text-gray-900">{question.questionText}</div>
@@ -349,10 +355,8 @@ export function QuestionAnalyticsSection({ audienceLabel }: QuestionAnalyticsSec
                       <div className="mt-1 text-xs text-gray-400">{question.telemetryCount} with telemetry</div>
                     </td>
                   </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+            )}
+          />
         )}
       </section>
     </div>

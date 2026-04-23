@@ -109,37 +109,41 @@ The bootstrap script:
 - retargets the hardcoded local database names to the deployed database names
 - repairs legacy encrypted records after the split-storage schema is applied
 
-## Vercel + Render + Railway
+## Vercel + Render + Aiven
 
 Recommended deployment split:
 
 - Vercel serves the frontend SPA
 - Render runs the PHP backend from [render.yaml](/C:/xampp/htdocs/group8/render.yaml)
 - Render runs the backend log-retention cron job from [render.yaml](/C:/xampp/htdocs/group8/render.yaml)
-- Railway provides MySQL
+- Aiven provides MySQL
 
 ### Render Backend Notes
 
 - Runtime: Docker, using `docker/backend/Dockerfile`
 - Health check path: `/api/health`
 - Cron job: `examhub-log-retention`, daily at `00:00 UTC`
-- Database host: Railway MySQL external TCP proxy credentials in the `examhub-railway-mysql` Render environment group
+- Database host: Aiven MySQL connection values in the `examhub-aiven-mysql` Render environment group
 - Set `CORS_ALLOW_ALL=false`
 - Set `CORS_ALLOWED_ORIGINS` to your Vercel site URL
 - Set the required seed credential env vars on first deploy if the database is empty
 
-### Railway Database Notes
+### Aiven Database Notes
 
-For Railway, the simplest setup is:
+For Aiven, the simplest setup is:
 
-- `DB_HOST=<your Railway MYSQLHOST or TCP proxy host>`
-- `DB_PORT=<your Railway MYSQLPORT or TCP proxy port>`
-- `DB_NAME=<your Railway MYSQLDATABASE value>`
-- `DB_USER=<your Railway MYSQLUSER value>`
-- `DB_PASS=<your Railway MYSQLPASSWORD value>`
+- `DB_HOST=<your Aiven host>`
+- `DB_PORT=<your Aiven port>`
+- `DB_NAME=<your Aiven database, often defaultdb unless you create another>`
+- `DB_USER=<your Aiven user, often avnadmin>`
+- `DB_PASS=<your Aiven password>`
+- `DB_SSL_MODE=verify-ca`
+- `DB_SSL_CA=/etc/secrets/aiven-ca.pem`
 - `LOG_DB_NAME=<same value as DB_NAME>`
 
-That keeps both application tables and fail-open logging tables in the same Railway database, which avoids needing a second hosted database name during first deployment.
+Download the Aiven CA certificate from the service overview and add it to Render as a secret file at the path used by `DB_SSL_CA`.
+
+That keeps both application tables and fail-open logging tables in the same Aiven database, which avoids needing a second hosted database name during first deployment.
 
 ### Vercel Frontend Notes
 

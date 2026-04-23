@@ -4,6 +4,7 @@ import { BookOpen, Users, CheckCircle, TrendingUp, Clock, ArrowRight } from 'luc
 import { useApp } from '../../context/AppContext';
 import { StatCard } from '../../components/shared/StatCard';
 import { Badge, getGradeBadge } from '../../components/shared/Badge';
+import { PaginatedTable } from '../../components/shared/PaginatedTable';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, ReferenceLine } from 'recharts';
 
 export function StudentDashboard() {
@@ -32,7 +33,7 @@ export function StudentDashboard() {
   });
 
   const upcomingExams = availableExams.slice(0, 5);
-  const recentResults = gradedSubs.slice(-5).reverse();
+  const recentResults = gradedSubs.slice().reverse();
 
   return (
     <div className="space-y-6">
@@ -117,36 +118,39 @@ export function StudentDashboard() {
         {recentResults.length === 0 ? (
           <div className="text-center py-8 text-gray-300 text-sm">No graded results yet</div>
         ) : (
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm">
+          <PaginatedTable
+            items={recentResults}
+            colSpan={4}
+            minWidthClassName="min-w-[560px]"
+            bodyClassName="divide-y divide-gray-50"
+            header={(
               <thead>
                 <tr className="text-xs text-gray-400 uppercase tracking-wider border-b border-gray-100">
-                  <th className="pb-3 text-left font-medium">Exam</th>
-                  <th className="pb-3 text-left font-medium hidden sm:table-cell">Date</th>
-                  <th className="pb-3 text-right font-medium">Score</th>
-                  <th className="pb-3 text-right font-medium">Grade</th>
+                  <th className="px-3 pb-3 text-left font-medium">Exam</th>
+                  <th className="px-3 pb-3 text-left font-medium">Date</th>
+                  <th className="px-3 pb-3 text-right font-medium">Score</th>
+                  <th className="px-3 pb-3 text-right font-medium">Grade</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-gray-50">
-                {recentResults.map(sub => {
-                  const exam = myExams.find(e => e.id === sub.examId);
-                  return (
-                    <tr key={sub.id} className="hover:bg-gray-50">
-                      <td className="py-3 font-medium text-gray-900">{exam?.title || 'Unknown Exam'}</td>
-                      <td className="py-3 text-gray-400 hidden sm:table-cell">{new Date(sub.gradedAt || sub.submittedAt).toLocaleDateString()}</td>
-                      <td className="py-3 text-right">
-                        <span className="font-semibold text-gray-900">{sub.totalScore}/{exam?.totalMarks}</span>
-                        <span className="text-gray-400 ml-1 text-xs">({sub.percentage}%)</span>
-                      </td>
-                      <td className="py-3 text-right">
-                        <Badge variant={getGradeBadge(sub.grade)}>{sub.grade}</Badge>
-                      </td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
-          </div>
+            )}
+            emptyRow={<div className="px-3 py-8 text-center text-gray-300 text-sm">No graded results yet</div>}
+            renderRow={sub => {
+              const exam = myExams.find(e => e.id === sub.examId);
+              return (
+                <tr key={sub.id} className="hover:bg-gray-50">
+                  <td className="px-3 py-3 font-medium text-gray-900">{exam?.title || 'Unknown Exam'}</td>
+                  <td className="px-3 py-3 text-gray-400">{new Date(sub.gradedAt || sub.submittedAt).toLocaleDateString()}</td>
+                  <td className="px-3 py-3 text-right">
+                    <span className="font-semibold text-gray-900">{sub.totalScore}/{exam?.totalMarks}</span>
+                    <span className="text-gray-400 ml-1 text-xs">({sub.percentage}%)</span>
+                  </td>
+                  <td className="px-3 py-3 text-right">
+                    <Badge variant={getGradeBadge(sub.grade)}>{sub.grade}</Badge>
+                  </td>
+                </tr>
+              );
+            }}
+          />
         )}
       </div>
 

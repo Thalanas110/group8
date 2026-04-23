@@ -1,5 +1,6 @@
 import React from 'react';
 import { Badge } from '../../../components/shared/Badge';
+import { PaginatedTable } from '../../../components/shared/PaginatedTable';
 import { OUTCOME_META, SEVERITY_META, type ViolationCaseRow, MAX_TAB_SWITCHES } from './case-meta';
 
 interface ViolationCasesTableProps {
@@ -10,8 +11,11 @@ interface ViolationCasesTableProps {
 export function ViolationCasesTable({ rows, onReview }: ViolationCasesTableProps) {
   return (
     <div className="bg-white rounded-2xl border border-gray-200 overflow-hidden">
-      <div className="overflow-x-auto">
-        <table className="w-full text-sm">
+      <PaginatedTable
+        items={rows}
+        colSpan={7}
+        minWidthClassName="min-w-[1040px]"
+        header={(
           <thead>
             <tr className="border-b border-gray-200 bg-gray-50">
               <th className="px-5 py-3.5 text-left font-semibold text-gray-600">Student</th>
@@ -23,8 +27,9 @@ export function ViolationCasesTable({ rows, onReview }: ViolationCasesTableProps
               <th className="px-5 py-3.5 text-right font-semibold text-gray-600">Action</th>
             </tr>
           </thead>
-          <tbody>
-            {rows.map(row => {
+        )}
+        emptyRow={<div className="px-5 py-10 text-center text-gray-400 text-sm">No violation cases found</div>}
+        renderRow={row => {
               const outcomeMeta = OUTCOME_META[row.outcome];
               const isPending = row.outcome === 'pending';
 
@@ -98,10 +103,8 @@ export function ViolationCasesTable({ rows, onReview }: ViolationCasesTableProps
                   </td>
                 </tr>
               );
-            })}
-          </tbody>
-        </table>
-      </div>
+        }}
+      />
     </div>
   );
 }

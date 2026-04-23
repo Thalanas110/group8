@@ -1,5 +1,6 @@
 import { CheckCircle2, Clock, ShieldAlert } from 'lucide-react';
 import { Badge, getGradeBadge, getStatusBadge } from '../../../../components/shared/Badge';
+import { PaginatedTable } from '../../../../components/shared/PaginatedTable';
 import type { Exam, Submission, User } from '../../../../data/types';
 
 interface SubmissionsTableProps {
@@ -41,19 +42,25 @@ export function SubmissionsTable({
       )}
 
       <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
-        <table className="w-full text-sm">
-          <thead className="bg-gray-50">
-            <tr className="text-xs text-gray-400 uppercase tracking-wider">
-              <th className="px-5 py-3 text-left font-medium">Student</th>
-              <th className="px-5 py-3 text-left font-medium">Exam</th>
-              <th className="px-5 py-3 text-left font-medium hidden md:table-cell">Submitted</th>
-              <th className="px-5 py-3 text-left font-medium">Status</th>
-              <th className="px-5 py-3 text-left font-medium hidden lg:table-cell">Score</th>
-              <th className="px-5 py-3 text-right font-medium">Action</th>
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-gray-50">
-            {submissions.map(submission => {
+        <PaginatedTable
+          items={submissions}
+          colSpan={6}
+          minWidthClassName="min-w-[860px]"
+          bodyClassName="divide-y divide-gray-50"
+          header={(
+            <thead className="bg-gray-50">
+              <tr className="text-xs text-gray-400 uppercase tracking-wider">
+                <th className="px-5 py-3 text-left font-medium">Student</th>
+                <th className="px-5 py-3 text-left font-medium">Exam</th>
+                <th className="px-5 py-3 text-left font-medium">Submitted</th>
+                <th className="px-5 py-3 text-left font-medium">Status</th>
+                <th className="px-5 py-3 text-left font-medium">Score</th>
+                <th className="px-5 py-3 text-right font-medium">Action</th>
+              </tr>
+            </thead>
+          )}
+          emptyRow={<div className="px-5 py-12 text-center text-gray-400 text-sm">No submissions found</div>}
+          renderRow={submission => {
               const student = getUserById(submission.studentId);
               const exam = exams.find(item => item.id === submission.examId);
 
@@ -68,9 +75,9 @@ export function SubmissionsTable({
                     </div>
                   </td>
                   <td className="px-5 py-3.5 text-gray-500">{exam?.title || '—'}</td>
-                  <td className="px-5 py-3.5 text-gray-400 hidden md:table-cell">{new Date(submission.submittedAt).toLocaleDateString()}</td>
+                  <td className="px-5 py-3.5 text-gray-400">{new Date(submission.submittedAt).toLocaleDateString()}</td>
                   <td className="px-5 py-3.5"><Badge variant={getStatusBadge(submission.status)}>{submission.status}</Badge></td>
-                  <td className="px-5 py-3.5 hidden lg:table-cell">
+                  <td className="px-5 py-3.5">
                     {submission.status === 'graded' ? (
                       <div className="flex items-center gap-2">
                         <span className="font-semibold text-gray-900">{submission.percentage}%</span>
@@ -103,9 +110,8 @@ export function SubmissionsTable({
                   </td>
                 </tr>
               );
-            })}
-          </tbody>
-        </table>
+          }}
+        />
       </div>
     </>
   );

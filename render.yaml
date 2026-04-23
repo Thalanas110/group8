@@ -17,7 +17,7 @@ services:
         - frontend/**
         - docs/**
     envVars:
-      - fromGroup: examhub-railway-mysql
+      - fromGroup: examhub-aiven-mysql
       - fromGroup: examhub-render-runtime
       - key: SEED_ADMIN_EMAIL
         sync: false
@@ -50,13 +50,13 @@ services:
         - frontend/**
         - docs/**
     envVars:
-      - fromGroup: examhub-railway-mysql
+      - fromGroup: examhub-aiven-mysql
       - fromGroup: examhub-render-runtime
 
 envVarGroups:
-  - name: examhub-railway-mysql
+  - name: examhub-aiven-mysql
     envVars:
-      # Railway MySQL external TCP proxy credentials.
+      # Aiven for MySQL connection values from the service overview.
       - key: DB_HOST
         sync: false
       - key: DB_PORT
@@ -67,7 +67,12 @@ envVarGroups:
         sync: false
       - key: DB_PASS
         sync: false
-      # Set to DB_NAME when app and logs tables share one Railway MySQL database.
+      - key: DB_SSL_MODE
+        value: verify-ca
+      # Absolute path to the Aiven CA certificate file, for example /etc/secrets/aiven-ca.pem.
+      - key: DB_SSL_CA
+        sync: false
+      # Set to DB_NAME when app and logs tables share one Aiven MySQL database.
       - key: LOG_DB_NAME
         sync: false
   - name: examhub-render-runtime

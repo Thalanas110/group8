@@ -51,7 +51,7 @@ The recommended hosted split for this repo is:
 - Frontend: Vercel
 - Backend API: Render
 - Backend scheduled maintenance: Render cron job
-- Database: Railway MySQL
+- Database: Aiven for MySQL
 
 Deployment assets included in the repo:
 
@@ -60,7 +60,7 @@ Deployment assets included in the repo:
 - [backend/scripts/bootstrap_database.php](/C:/xampp/htdocs/group8/backend/scripts/bootstrap_database.php)
 - [backend/scripts/purge_log_retention.php](/C:/xampp/htdocs/group8/backend/scripts/purge_log_retention.php)
 
-Use the backend bootstrap command after configuring Render with Railway MySQL environment variables:
+Use the backend bootstrap command after configuring Render with Aiven MySQL environment variables:
 
 ```bash
 cd backend
@@ -70,10 +70,10 @@ composer bootstrap-database
 That command applies the repo SQL in the correct order, retargets the hardcoded local database names to your deployed database names, and repairs legacy encrypted records.
 It now also auto-discovers and applies ordered `backend/database/app_*.sql` and `backend/database/logs_*.sql` files, so new DB work can ship as additive migrations without editing the base schema.
 
-Full hosted setup notes live in [docs/deployment/vercel-render-railway.md](/C:/xampp/htdocs/group8/docs/deployment/vercel-render-railway.md).
+Full hosted setup notes live in [docs/deployment/vercel-render-aiven.md](/C:/xampp/htdocs/group8/docs/deployment/vercel-render-aiven.md).
 
 ## Docs
 
 - Backend/security guide: [backend/README.md](/C:/xampp/htdocs/group8/backend/README.md)
 - API documentation: [docs/api/backend-api-documentation.md](/C:/xampp/htdocs/group8/docs/api/backend-api-documentation.md)
-- Deployment guide: [docs/deployment/vercel-render-railway.md](/C:/xampp/htdocs/group8/docs/deployment/vercel-render-railway.md)
+- Deployment guide: [docs/deployment/vercel-render-aiven.md](/C:/xampp/htdocs/group8/docs/deployment/vercel-render-aiven.md)

@@ -89,8 +89,8 @@ export function EndpointCard({ endpoint, check }: { endpoint: EndpointDoc; check
           {endpoint.requestBody && (
             <div className="px-5 py-4">
               <h4 className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-3">Request Body (JSON)</h4>
-              <div className="overflow-x-auto">
-                <table className="w-full text-xs">
+              <div className="data-table-scroll overflow-x-auto">
+                <table className="w-full min-w-[620px] text-xs">
                   <thead>
                     <tr className="text-gray-400 border-b border-gray-100">
                       <th className="text-left pb-2 font-medium pr-4">Field</th>

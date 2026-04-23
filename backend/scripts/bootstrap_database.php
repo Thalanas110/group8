@@ -5,6 +5,7 @@ declare(strict_types=1);
 use App\Config\AppConfig;
 use App\Config\Env;
 use App\Database\DbConnection;
+use App\Database\MysqlPdoFactory;
 use App\Database\RoutineGateway;
 use App\Database\SqlScriptRunner;
 use App\Security\AesGcmCrypto;
@@ -17,18 +18,24 @@ require_once __DIR__ . '/../bootstrap/autoload.php';
  * Connect to an already-provisioned database and apply the repo SQL files
  * without assuming hardcoded local database names.
  */
-function bootstrapPdo(string $host, int $port, string $database, string $user, string $password): PDO
+function bootstrapPdo(
+    string $host,
+    int $port,
+    string $database,
+    string $user,
+    string $password,
+    string $sslMode = '',
+    ?string $sslCa = null,
+): PDO
 {
-    return new PDO(
-        sprintf('mysql:host=%s;port=%d;dbname=%s;charset=utf8mb4', $host, $port, $database),
+    return MysqlPdoFactory::create(
+        $host,
+        $port,
+        $database,
         $user,
         $password,
-        [
-            PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
-            PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
-            PDO::ATTR_EMULATE_PREPARES => false,
-            PDO::MYSQL_ATTR_USE_BUFFERED_QUERY => true,
-        ],
+        $sslMode,
+        $sslCa,
     );
 }
 
@@ -64,6 +71,8 @@ try {
             $config->dbName,
             $config->dbUser,
             $config->dbPass,
+            $config->dbSslMode,
+            $config->dbSslCa,
         ),
     );
 
@@ -86,6 +95,8 @@ try {
             $config->logDbName,
             $config->logDbUser,
             $config->logDbPass,
+            $config->logDbSslMode,
+            $config->logDbSslCa,
         ),
     );
 

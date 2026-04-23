@@ -4,6 +4,7 @@ import { Users, FileText, Clipboard, TrendingUp, ArrowRight, Code2, BarChart2 } 
 import { useApp } from '../../context/AppContext';
 import { StatCard } from '../../components/shared/StatCard';
 import { Badge, getStatusBadge } from '../../components/shared/Badge';
+import { PaginatedTable } from '../../components/shared/PaginatedTable';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, Legend } from 'recharts';
 
 export function AdminDashboard() {
@@ -42,7 +43,7 @@ export function AdminDashboard() {
     students: c.studentIds.length,
   }));
 
-  const recentSubs = submissions.slice(-6).reverse();
+  const recentSubs = submissions.slice().reverse();
 
   return (
     <div className="space-y-6">
@@ -137,32 +138,37 @@ export function AdminDashboard() {
             View all <ArrowRight className="w-3 h-3" />
           </button>
         </div>
-        <table className="w-full text-sm">
-          <thead className="bg-gray-50">
-            <tr className="text-xs text-gray-400 uppercase tracking-wider">
-              <th className="px-5 py-3 text-left font-medium">Student</th>
-              <th className="px-5 py-3 text-left font-medium hidden md:table-cell">Exam</th>
-              <th className="px-5 py-3 text-left font-medium">Status</th>
-              <th className="px-5 py-3 text-right font-medium hidden lg:table-cell">Score</th>
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-gray-50">
-            {recentSubs.map(sub => {
-              const student = getUserById(sub.studentId);
-              const exam = exams.find(e => e.id === sub.examId);
-              return (
-                <tr key={sub.id} className="hover:bg-gray-50">
-                  <td className="px-5 py-3.5 font-medium text-gray-900 text-sm">{student?.name || 'Unknown'}</td>
-                  <td className="px-5 py-3.5 text-gray-500 text-sm hidden md:table-cell">{exam?.title || '—'}</td>
-                  <td className="px-5 py-3.5"><Badge variant={getStatusBadge(sub.status)}>{sub.status}</Badge></td>
-                  <td className="px-5 py-3.5 text-right text-gray-600 text-sm hidden lg:table-cell">
-                    {sub.status === 'graded' ? `${sub.percentage}% · ${sub.grade}` : '—'}
-                  </td>
-                </tr>
-              );
-            })}
-          </tbody>
-        </table>
+        <PaginatedTable
+          items={recentSubs}
+          colSpan={4}
+          minWidthClassName="min-w-[640px]"
+          bodyClassName="divide-y divide-gray-50"
+          header={(
+            <thead className="bg-gray-50">
+              <tr className="text-xs text-gray-400 uppercase tracking-wider">
+                <th className="px-5 py-3 text-left font-medium">Student</th>
+                <th className="px-5 py-3 text-left font-medium">Exam</th>
+                <th className="px-5 py-3 text-left font-medium">Status</th>
+                <th className="px-5 py-3 text-right font-medium">Score</th>
+              </tr>
+            </thead>
+          )}
+          emptyRow={<div className="px-5 py-8 text-center text-gray-300 text-sm">No recent activity yet</div>}
+          renderRow={sub => {
+            const student = getUserById(sub.studentId);
+            const exam = exams.find(e => e.id === sub.examId);
+            return (
+              <tr key={sub.id} className="hover:bg-gray-50">
+                <td className="px-5 py-3.5 font-medium text-gray-900 text-sm">{student?.name || 'Unknown'}</td>
+                <td className="px-5 py-3.5 text-gray-500 text-sm">{exam?.title || '—'}</td>
+                <td className="px-5 py-3.5"><Badge variant={getStatusBadge(sub.status)}>{sub.status}</Badge></td>
+                <td className="px-5 py-3.5 text-right text-gray-600 text-sm">
+                  {sub.status === 'graded' ? `${sub.percentage}% · ${sub.grade}` : '—'}
+                </td>
+              </tr>
+            );
+          }}
+        />
       </div>
     </div>
   );

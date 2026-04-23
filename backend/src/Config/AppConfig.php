@@ -35,6 +35,10 @@ final class AppConfig
         public string $seedStudentEmail,
         public string $seedStudentPassword,
         public ?string $seedStudentDepartment,
+        public string $dbSslMode = '',
+        public ?string $dbSslCa = null,
+        public string $logDbSslMode = '',
+        public ?string $logDbSslCa = null,
     ) {
     }
 
@@ -69,6 +73,10 @@ final class AppConfig
             seedStudentEmail: $env->get('SEED_STUDENT_EMAIL', ''),
             seedStudentPassword: $env->get('SEED_STUDENT_PASSWORD', ''),
             seedStudentDepartment: self::nullableEnv($env->get('SEED_STUDENT_DEPARTMENT', '')),
+            dbSslMode: $env->get('DB_SSL_MODE', ''),
+            dbSslCa: self::nullableEnv($env->get('DB_SSL_CA', '')),
+            logDbSslMode: $env->get('LOG_DB_SSL_MODE', $env->get('DB_SSL_MODE', '')),
+            logDbSslCa: self::nullableEnv($env->get('LOG_DB_SSL_CA', $env->get('DB_SSL_CA', ''))),
         );
     }
 

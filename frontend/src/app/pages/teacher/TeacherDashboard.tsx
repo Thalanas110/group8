@@ -4,6 +4,7 @@ import { BookOpen, Users, FileText, Clock, ArrowRight } from 'lucide-react';
 import { useApp } from '../../context/AppContext';
 import { StatCard } from '../../components/shared/StatCard';
 import { Badge, getStatusBadge } from '../../components/shared/Badge';
+import { PaginatedTable } from '../../components/shared/PaginatedTable';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, Legend } from 'recharts';
 
 export function TeacherDashboard() {
@@ -34,7 +35,7 @@ export function TeacherDashboard() {
     { name: 'Pending', value: submittedCount },
   ].filter(d => d.value > 0);
 
-  const recentSubs = allSubs.slice(-5).reverse();
+  const recentSubs = allSubs.slice().reverse();
 
   return (
     <div className="space-y-6">
@@ -133,32 +134,37 @@ export function TeacherDashboard() {
         {recentSubs.length === 0 ? (
           <div className="py-8 text-center text-gray-300 text-sm">No submissions yet</div>
         ) : (
-          <table className="w-full text-sm">
-            <thead className="bg-gray-50">
-              <tr className="text-xs text-gray-400 uppercase tracking-wider">
-                <th className="px-5 py-3 text-left font-medium">Student</th>
-                <th className="px-5 py-3 text-left font-medium hidden md:table-cell">Exam</th>
-                <th className="px-5 py-3 text-left font-medium">Status</th>
-                <th className="px-5 py-3 text-right font-medium hidden lg:table-cell">Score</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-gray-50">
-              {recentSubs.map(sub => {
-                const student = getUserById(sub.studentId);
-                const exam = myExams.find(e => e.id === sub.examId);
-                return (
-                  <tr key={sub.id} className="hover:bg-gray-50">
-                    <td className="px-5 py-3 font-medium text-gray-900">{student?.name || 'Unknown'}</td>
-                    <td className="px-5 py-3 text-gray-500 hidden md:table-cell">{exam?.title || '—'}</td>
-                    <td className="px-5 py-3"><Badge variant={getStatusBadge(sub.status)}>{sub.status}</Badge></td>
-                    <td className="px-5 py-3 text-right text-gray-600 hidden lg:table-cell">
-                      {sub.status === 'graded' ? `${sub.percentage}%` : '—'}
-                    </td>
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
+          <PaginatedTable
+            items={recentSubs}
+            colSpan={4}
+            minWidthClassName="min-w-[640px]"
+            bodyClassName="divide-y divide-gray-50"
+            header={(
+              <thead className="bg-gray-50">
+                <tr className="text-xs text-gray-400 uppercase tracking-wider">
+                  <th className="px-5 py-3 text-left font-medium">Student</th>
+                  <th className="px-5 py-3 text-left font-medium">Exam</th>
+                  <th className="px-5 py-3 text-left font-medium">Status</th>
+                  <th className="px-5 py-3 text-right font-medium">Score</th>
+                </tr>
+              </thead>
+            )}
+            emptyRow={<div className="px-5 py-8 text-center text-gray-300 text-sm">No submissions yet</div>}
+            renderRow={sub => {
+              const student = getUserById(sub.studentId);
+              const exam = myExams.find(e => e.id === sub.examId);
+              return (
+                <tr key={sub.id} className="hover:bg-gray-50">
+                  <td className="px-5 py-3 font-medium text-gray-900">{student?.name || 'Unknown'}</td>
+                  <td className="px-5 py-3 text-gray-500">{exam?.title || '—'}</td>
+                  <td className="px-5 py-3"><Badge variant={getStatusBadge(sub.status)}>{sub.status}</Badge></td>
+                  <td className="px-5 py-3 text-right text-gray-600">
+                    {sub.status === 'graded' ? `${sub.percentage}%` : '—'}
+                  </td>
+                </tr>
+              );
+            }}
+          />
         )}
       </div>
     </div>

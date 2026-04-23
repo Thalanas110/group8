@@ -3,6 +3,7 @@ import { Plus, Edit2, Trash2, Search, Users, GraduationCap, BookOpen, Shield } f
 import { useApp } from '../../context/AppContext';
 import { Badge } from '../../components/shared/Badge';
 import { Modal, ConfirmDialog } from '../../components/shared/Modal';
+import { PaginatedTable } from '../../components/shared/PaginatedTable';
 import { User, UserRole } from '../../data/types';
 import { toast } from 'sonner';
 
@@ -107,19 +108,25 @@ export function AdminUsers() {
 
       {/* User Table */}
       <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
-        <table className="w-full text-sm">
-          <thead className="bg-gray-50">
-            <tr className="text-xs text-gray-500">
-              <th className="px-6 py-3 text-left font-medium">User</th>
-              <th className="px-6 py-3 text-left font-medium hidden md:table-cell">Email</th>
-              <th className="px-6 py-3 text-left font-medium">Role</th>
-              <th className="px-6 py-3 text-left font-medium hidden lg:table-cell">Department</th>
-              <th className="px-6 py-3 text-left font-medium hidden lg:table-cell">Joined</th>
-              <th className="px-6 py-3 text-right font-medium">Actions</th>
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-gray-100">
-            {filtered.map(u => {
+        <PaginatedTable
+          items={filtered}
+          colSpan={6}
+          minWidthClassName="min-w-[780px]"
+          bodyClassName="divide-y divide-gray-100"
+          header={(
+            <thead className="bg-gray-50">
+              <tr className="text-xs text-gray-500">
+                <th className="px-6 py-3 text-left font-medium">User</th>
+                <th className="px-6 py-3 text-left font-medium">Email</th>
+                <th className="px-6 py-3 text-left font-medium">Role</th>
+                <th className="px-6 py-3 text-left font-medium">Department</th>
+                <th className="px-6 py-3 text-left font-medium">Joined</th>
+                <th className="px-6 py-3 text-right font-medium">Actions</th>
+              </tr>
+            </thead>
+          )}
+          emptyRow={<div className="px-6 py-12 text-center text-gray-400 text-sm">No users found</div>}
+          renderRow={u => {
               const cfg = roleConfig[u.role];
               const initials = u.name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2);
               return (
@@ -132,12 +139,12 @@ export function AdminUsers() {
                       <span className="font-medium text-gray-900">{u.name}</span>
                     </div>
                   </td>
-                  <td className="px-6 py-3.5 text-gray-500 hidden md:table-cell">{u.email}</td>
+                  <td className="px-6 py-3.5 text-gray-500">{u.email}</td>
                   <td className="px-6 py-3.5">
                     <Badge variant={cfg.variant}>{cfg.label}</Badge>
                   </td>
-                  <td className="px-6 py-3.5 text-gray-400 hidden lg:table-cell">{u.department || '—'}</td>
-                  <td className="px-6 py-3.5 text-gray-400 hidden lg:table-cell">{new Date(u.joinedAt).toLocaleDateString()}</td>
+                  <td className="px-6 py-3.5 text-gray-400">{u.department || '—'}</td>
+                  <td className="px-6 py-3.5 text-gray-400">{new Date(u.joinedAt).toLocaleDateString()}</td>
                   <td className="px-6 py-3.5 text-right">
                     <div className="flex items-center justify-end gap-1.5">
                       <button onClick={() => openEdit(u)} className="p-1.5 rounded-lg hover:bg-gray-100 text-gray-400 hover:text-gray-700">
@@ -150,12 +157,8 @@ export function AdminUsers() {
                   </td>
                 </tr>
               );
-            })}
-            {filtered.length === 0 && (
-              <tr><td colSpan={6} className="px-6 py-12 text-center text-gray-400 text-sm">No users found</td></tr>
-            )}
-          </tbody>
-        </table>
+          }}
+        />
       </div>
 
       {/* User Modal */}

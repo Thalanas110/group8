@@ -31,16 +31,16 @@ CREATE TABLE test_table (
 );
 SQL;
 
-$retargeted = SqlScriptRunner::retargetDatabase($sql, 'examhub', 'railway_prod');
+$retargeted = SqlScriptRunner::retargetDatabase($sql, 'examhub', 'aiven_prod');
 if (str_contains($retargeted, 'CREATE DATABASE IF NOT EXISTS examhub')) {
     $failures[] = 'retargetDatabase should strip CREATE DATABASE statements for hosted bootstraps.';
 }
 
-if (!str_contains($retargeted, 'USE `railway_prod`;')) {
+if (!str_contains($retargeted, 'USE `aiven_prod`;')) {
     $failures[] = 'retargetDatabase should rewrite USE statements to the target database.';
 }
 
-if (!str_contains($retargeted, 'FROM `railway_prod`.users u')) {
+if (!str_contains($retargeted, 'FROM `aiven_prod`.users u')) {
     $failures[] = 'retargetDatabase should rewrite qualified database references to the target database.';
 }
 

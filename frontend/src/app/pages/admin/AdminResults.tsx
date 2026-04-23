@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
-import { Search, Filter } from 'lucide-react';
+import { Search } from 'lucide-react';
 import { useApp } from '../../context/AppContext';
 import { Badge, getGradeBadge } from '../../components/shared/Badge';
+import { PaginatedTable } from '../../components/shared/PaginatedTable';
 
 export function AdminResults() {
   const { submissions, exams, users, classes, getUserById } = useApp();
@@ -72,26 +73,31 @@ export function AdminResults() {
 
       {/* Results Table */}
       <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
-        <table className="w-full text-sm">
-          <thead className="bg-gray-50">
-            <tr className="text-xs text-gray-500">
-              <th className="px-6 py-3 text-left font-medium">Student</th>
-              <th className="px-6 py-3 text-left font-medium">Exam</th>
-              <th className="px-6 py-3 text-left font-medium hidden md:table-cell">Class</th>
-              <th className="px-6 py-3 text-left font-medium">Status</th>
-              <th className="px-6 py-3 text-left font-medium hidden lg:table-cell">Score</th>
-              <th className="px-6 py-3 text-left font-medium hidden lg:table-cell">Grade</th>
-              <th className="px-6 py-3 text-left font-medium hidden xl:table-cell">Submitted</th>
-              <th className="px-6 py-3 text-right font-medium">Detail</th>
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-gray-100">
-            {filtered.map(sub => {
+        <PaginatedTable
+          items={filtered}
+          colSpan={8}
+          minWidthClassName="min-w-[1040px]"
+          bodyClassName="divide-y divide-gray-100"
+          header={(
+            <thead className="bg-gray-50">
+              <tr className="text-xs text-gray-500">
+                <th className="px-6 py-3 text-left font-medium">Student</th>
+                <th className="px-6 py-3 text-left font-medium">Exam</th>
+                <th className="px-6 py-3 text-left font-medium">Class</th>
+                <th className="px-6 py-3 text-left font-medium">Status</th>
+                <th className="px-6 py-3 text-left font-medium">Score</th>
+                <th className="px-6 py-3 text-left font-medium">Grade</th>
+                <th className="px-6 py-3 text-left font-medium">Submitted</th>
+                <th className="px-6 py-3 text-right font-medium">Detail</th>
+              </tr>
+            </thead>
+          )}
+          emptyRow={<div className="px-6 py-12 text-center text-gray-400 text-sm">No results found</div>}
+          renderRow={sub => {
               const student = getUserById(sub.studentId);
               const exam = exams.find(e => e.id === sub.examId);
               const cls = exam ? classes.find(c => c.id === exam.classId) : null;
               const initials = student?.name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2) || '?';
-              const passed = exam && sub.totalScore !== undefined && sub.totalScore >= exam.passingMarks;
               return (
                 <React.Fragment key={sub.id}>
                   <tr className="hover:bg-gray-50">
@@ -102,11 +108,11 @@ export function AdminResults() {
                       </div>
                     </td>
                     <td className="px-6 py-3.5 text-gray-600 max-w-[150px] truncate">{exam?.title || '—'}</td>
-                    <td className="px-6 py-3.5 text-gray-400 hidden md:table-cell">{cls?.name || '—'}</td>
+                    <td className="px-6 py-3.5 text-gray-400">{cls?.name || '—'}</td>
                     <td className="px-6 py-3.5">
                       <Badge variant={sub.status === 'graded' ? 'success' : 'warning'}>{sub.status}</Badge>
                     </td>
-                    <td className="px-6 py-3.5 hidden lg:table-cell">
+                    <td className="px-6 py-3.5">
                       {sub.totalScore !== undefined ? (
                         <div>
                           <span className="font-semibold text-gray-900">{sub.totalScore}/{exam?.totalMarks}</span>
@@ -114,10 +120,10 @@ export function AdminResults() {
                         </div>
                       ) : <span className="text-gray-300">—</span>}
                     </td>
-                    <td className="px-6 py-3.5 hidden lg:table-cell">
+                    <td className="px-6 py-3.5">
                       {sub.grade ? <Badge variant={getGradeBadge(sub.grade)}>{sub.grade}</Badge> : <span className="text-gray-300">—</span>}
                     </td>
-                    <td className="px-6 py-3.5 text-gray-400 text-xs hidden xl:table-cell">{new Date(sub.submittedAt).toLocaleDateString()}</td>
+                    <td className="px-6 py-3.5 text-gray-400 text-xs">{new Date(sub.submittedAt).toLocaleDateString()}</td>
                     <td className="px-6 py-3.5 text-right">
                       <button onClick={() => setExpanded(expanded === sub.id ? null : sub.id)} className="text-xs text-blue-600 font-medium hover:text-blue-700 underline">
                         {expanded === sub.id ? 'Hide' : 'View'}
@@ -153,12 +159,8 @@ export function AdminResults() {
                   )}
                 </React.Fragment>
               );
-            })}
-            {filtered.length === 0 && (
-              <tr><td colSpan={8} className="px-6 py-12 text-center text-gray-400 text-sm">No results found</td></tr>
-            )}
-          </tbody>
-        </table>
+          }}
+        />
       </div>
     </div>
   );

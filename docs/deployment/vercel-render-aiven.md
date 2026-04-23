@@ -1,33 +1,40 @@
-# Vercel + Render + Railway Deployment Guide
+# Vercel + Render + Aiven Deployment Guide
 
 This repo is prepared for the following hosted split:
 
 - Frontend: Vercel
 - Backend API: Render web service
 - Scheduled backend work: Render cron job
-- Database: Railway MySQL
+- Database: Aiven for MySQL
 
-## 1. Railway MySQL
+## 1. Aiven MySQL
 
-Provision a Railway MySQL database first.
+Provision an Aiven for MySQL service first.
 
-Because Render runs outside your Railway project, use Railway's external TCP proxy connection details as the source of truth for:
+Because Render runs outside Aiven, use the connection values from the Aiven service overview as the source of truth for:
 
 - `DB_HOST`
 - `DB_PORT`
 - `DB_NAME`
 - `DB_USER`
 - `DB_PASS`
+- `DB_SSL_CA`
 
-Recommended logging setup on Railway:
+Download the Aiven CA certificate and add it to Render as a secret file, for example:
+
+- secret file path: `/etc/secrets/aiven-ca.pem`
+- `DB_SSL_MODE=verify-ca`
+- `DB_SSL_CA=/etc/secrets/aiven-ca.pem`
+
+Recommended logging setup on Aiven:
 
 - set `LOG_DB_NAME` equal to `DB_NAME`
 
-That keeps request/audit logging in the same Railway database and avoids needing a second hosted database during setup.
+That keeps request/audit logging in the same Aiven database and avoids needing a second hosted database during setup. If you later use a separate Aiven service for logs, also set `LOG_DB_HOST`, `LOG_DB_PORT`, `LOG_DB_USER`, `LOG_DB_PASS`, `LOG_DB_SSL_MODE`, and `LOG_DB_SSL_CA`.
 
-No Railway cron service is required for this repo's current app maintenance work. Log retention is handled by the Render cron job below. For database backups, prefer Railway's native backup feature; only add a Railway cron service if you later introduce a short-lived backup/export container that exits after each run.
+No Aiven cron job is required for this repo's current app maintenance work. Log retention is handled by the Render cron job below. For database backups, prefer Aiven's native backup tools.
 
-Manual Railway SQL import order for the app database:
+Manual Aiven SQL import order for the app database:
 
 1. `backend/database/app_001_schema_routines.sql`
 2. `backend/database/app_002_schema_split_encrypted_storage.sql`
@@ -35,7 +42,7 @@ Manual Railway SQL import order for the app database:
 4. `backend/database/app_004_migrate_add_student_exam_accommodations.sql`
 5. `backend/database/app_005_migrate_enable_submission_attempts.sql`
 
-Manual Railway SQL import order for the logs database:
+Manual Aiven SQL import order for the logs database:
 
 1. `backend/database/logs_001_logging_routines.sql`
 2. `backend/database/logs_002_migrate_add_exam_violations.sql`
@@ -50,16 +57,18 @@ The Blueprint creates:
 
 - `examhub-api`: Docker web service, health check `/api/health`
 - `examhub-log-retention`: Docker cron job, scheduled daily at `00:00 UTC`
-- `examhub-railway-mysql`: Render environment group for Railway MySQL connection values
+- `examhub-aiven-mysql`: Render environment group for Aiven MySQL connection values
 - `examhub-render-runtime`: Render environment group for shared backend runtime values
 
-Important: Render does not create or own the MySQL database. Fill the `examhub-railway-mysql` environment group with Railway's external TCP proxy values:
+Important: Render does not create or own the MySQL database. Fill the `examhub-aiven-mysql` environment group with Aiven's connection values:
 
-- `DB_HOST=<Railway MYSQLHOST or TCP proxy host>`
-- `DB_PORT=<Railway MYSQLPORT or TCP proxy port>`
-- `DB_NAME=<Railway MYSQLDATABASE>`
-- `DB_USER=<Railway MYSQLUSER>`
-- `DB_PASS=<Railway MYSQLPASSWORD>`
+- `DB_HOST=<Aiven host>`
+- `DB_PORT=<Aiven port>`
+- `DB_NAME=<Aiven database, often defaultdb unless you create another>`
+- `DB_USER=<Aiven user, often avnadmin>`
+- `DB_PASS=<Aiven password>`
+- `DB_SSL_MODE=verify-ca`
+- `DB_SSL_CA=/etc/secrets/aiven-ca.pem`
 - `LOG_DB_NAME=<same value as DB_NAME unless you provision a separate logs database>`
 
 The `examhub-render-runtime` group contains Render-side app settings:
@@ -80,7 +89,7 @@ Set these seed values only on the `examhub-api` web service:
 - `SEED_STUDENT_EMAIL`
 - `SEED_STUDENT_PASSWORD`
 
-The cron job uses the same Railway MySQL environment group and runs:
+The cron job uses the same Aiven MySQL environment group and runs:
 
 ```bash
 php /var/www/html/backend/scripts/purge_log_retention.php
@@ -88,7 +97,7 @@ php /var/www/html/backend/scripts/purge_log_retention.php
 
 ### Bootstrap the Database
 
-After the Render service can reach Railway and the environment variables are configured, run the bootstrap against Railway MySQL:
+After the Render service can reach Aiven and the environment variables are configured, run the bootstrap against Aiven MySQL:
 
 ```bash
 cd backend

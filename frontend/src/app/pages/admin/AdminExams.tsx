@@ -3,6 +3,7 @@ import { Search, FileText, Trash2, Eye, Clock, Users, CheckSquare } from 'lucide
 import { useApp } from '../../context/AppContext';
 import { Badge, getStatusBadge } from '../../components/shared/Badge';
 import { ConfirmDialog, Modal } from '../../components/shared/Modal';
+import { PaginatedTable } from '../../components/shared/PaginatedTable';
 import { ExamStatus } from '../../data/types';
 import { toast } from 'sonner';
 
@@ -91,19 +92,25 @@ export function AdminExams() {
 
       {/* Exams Table */}
       <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
-        <table className="w-full text-sm">
-          <thead className="bg-gray-50">
-            <tr className="text-xs text-gray-500">
-              <th className="px-6 py-3 text-left font-medium">Exam</th>
-              <th className="px-6 py-3 text-left font-medium hidden md:table-cell">Class</th>
-              <th className="px-6 py-3 text-left font-medium hidden lg:table-cell">Teacher</th>
-              <th className="px-6 py-3 text-left font-medium">Status</th>
-              <th className="px-6 py-3 text-left font-medium hidden md:table-cell">Submissions</th>
-              <th className="px-6 py-3 text-right font-medium">Actions</th>
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-gray-100">
-            {filtered.map(exam => {
+        <PaginatedTable
+          items={filtered}
+          colSpan={6}
+          minWidthClassName="min-w-[860px]"
+          bodyClassName="divide-y divide-gray-100"
+          header={(
+            <thead className="bg-gray-50">
+              <tr className="text-xs text-gray-500">
+                <th className="px-6 py-3 text-left font-medium">Exam</th>
+                <th className="px-6 py-3 text-left font-medium">Class</th>
+                <th className="px-6 py-3 text-left font-medium">Teacher</th>
+                <th className="px-6 py-3 text-left font-medium">Status</th>
+                <th className="px-6 py-3 text-left font-medium">Submissions</th>
+                <th className="px-6 py-3 text-right font-medium">Actions</th>
+              </tr>
+            </thead>
+          )}
+          emptyRow={<div className="px-6 py-12 text-center text-gray-400 text-sm">No exams found</div>}
+          renderRow={exam => {
               const cls = classes.find(c => c.id === exam.classId);
               const teacher = getUserById(exam.teacherId);
               const subs = getSubmissionsByExam(exam.id);
@@ -120,8 +127,8 @@ export function AdminExams() {
                       </div>
                     </div>
                   </td>
-                  <td className="px-6 py-3.5 text-gray-500 hidden md:table-cell">{cls?.name || '—'}</td>
-                  <td className="px-6 py-3.5 text-gray-500 hidden lg:table-cell">{teacher?.name || '—'}</td>
+                  <td className="px-6 py-3.5 text-gray-500">{cls?.name || '—'}</td>
+                  <td className="px-6 py-3.5 text-gray-500">{teacher?.name || '—'}</td>
                   <td className="px-6 py-3.5">
                     <select value={exam.status} onChange={e => handleStatusChange(exam.id, e.target.value as ExamStatus)}
                       className="text-xs border-0 bg-transparent focus:outline-none cursor-pointer">
@@ -130,7 +137,7 @@ export function AdminExams() {
                       <option value="completed">Completed</option>
                     </select>
                   </td>
-                  <td className="px-6 py-3.5 text-gray-500 hidden md:table-cell">
+                  <td className="px-6 py-3.5 text-gray-500">
                     <div className="flex items-center gap-1.5 text-xs">
                       <span>{subs.length} total</span>
                       <span className="text-green-600">· {subs.filter(s => s.status === 'graded').length} graded</span>
@@ -148,12 +155,8 @@ export function AdminExams() {
                   </td>
                 </tr>
               );
-            })}
-            {filtered.length === 0 && (
-              <tr><td colSpan={6} className="px-6 py-12 text-center text-gray-400 text-sm">No exams found</td></tr>
-            )}
-          </tbody>
-        </table>
+          }}
+        />
       </div>
 
       {/* View Exam Modal */}

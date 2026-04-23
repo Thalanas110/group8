@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { TrendingUp, Award, FileText, AlertTriangle } from 'lucide-react';
 import { useApp } from '../../context/AppContext';
 import { Badge, getGradeBadge } from '../../components/shared/Badge';
+import { PaginatedTable } from '../../components/shared/PaginatedTable';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, LineChart, Line, PieChart, Pie, Cell, Legend } from 'recharts';
 
 const GRADE_COLORS: Record<string, string> = {
@@ -116,28 +117,32 @@ export function StudentResults() {
             <div className="px-6 py-4 border-b border-gray-100">
               <h2 className="text-base font-semibold text-gray-900">All Results</h2>
             </div>
-            <div className="overflow-x-auto">
-              <table className="w-full text-sm">
+            <PaginatedTable
+              items={gradedSubs}
+              colSpan={7}
+              minWidthClassName="min-w-[860px]"
+              bodyClassName="divide-y divide-gray-100"
+              header={(
                 <thead className="bg-gray-50">
                   <tr className="text-xs text-gray-500">
                     <th className="px-6 py-3 text-left font-medium">Exam</th>
-                    <th className="px-6 py-3 text-left font-medium hidden md:table-cell">Class</th>
+                    <th className="px-6 py-3 text-left font-medium">Class</th>
                     <th className="px-6 py-3 text-left font-medium">Score</th>
                     <th className="px-6 py-3 text-left font-medium">%</th>
                     <th className="px-6 py-3 text-left font-medium">Grade</th>
-                    <th className="px-6 py-3 text-left font-medium hidden lg:table-cell">Date</th>
+                    <th className="px-6 py-3 text-left font-medium">Date</th>
                     <th className="px-6 py-3 text-left font-medium">Actions</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-gray-100">
-                  {gradedSubs.map(sub => {
+              )}
+              emptyRow={<div className="px-6 py-12 text-center text-gray-400 text-sm">No results found</div>}
+              renderRow={sub => {
                     const exam = myExams.find(e => e.id === sub.examId);
                     const cls = exam ? classes.find(c => c.id === exam.classId) : null;
-                    const passed = exam && (sub.totalScore || 0) >= exam.passingMarks;
                     return (
                       <tr key={sub.id} className="hover:bg-gray-50">
                         <td className="px-6 py-4 font-medium text-gray-900">{exam?.title || 'Unknown'}</td>
-                        <td className="px-6 py-4 text-gray-500 hidden md:table-cell">{cls?.name || '-'}</td>
+                        <td className="px-6 py-4 text-gray-500">{cls?.name || '-'}</td>
                         <td className="px-6 py-4 font-semibold text-gray-900">{sub.totalScore}/{exam?.totalMarks}</td>
                         <td className="px-6 py-4">
                           <div className="flex items-center gap-2">
@@ -148,7 +153,7 @@ export function StudentResults() {
                           </div>
                         </td>
                         <td className="px-6 py-4"><Badge variant={getGradeBadge(sub.grade)}>{sub.grade}</Badge></td>
-                        <td className="px-6 py-4 text-gray-400 hidden lg:table-cell">{new Date(sub.gradedAt || sub.submittedAt).toLocaleDateString()}</td>
+                        <td className="px-6 py-4 text-gray-400">{new Date(sub.gradedAt || sub.submittedAt).toLocaleDateString()}</td>
                         <td className="px-6 py-4">
                           <button onClick={() => setSelectedSub(selectedSub === sub.id ? null : sub.id)} className="text-xs font-medium text-gray-500 hover:text-gray-900 underline">
                             {selectedSub === sub.id ? 'Hide' : 'Details'}
@@ -156,10 +161,8 @@ export function StudentResults() {
                         </td>
                       </tr>
                     );
-                  })}
-                </tbody>
-              </table>
-            </div>
+              }}
+            />
           </div>
 
           {/* Detail Panel */}

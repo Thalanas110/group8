@@ -103,7 +103,7 @@ Decryption is centralized in `App\Services\Support\ExamMapper` before JSON is re
 - Recommended hosted split:
   - Vercel frontend
   - Render backend plus Render cron job
-  - Railway MySQL
+  - Aiven MySQL
 - Render health check path: `/api/health`
 - Hosted bootstrap command:
 
@@ -112,7 +112,7 @@ cd backend
 composer bootstrap-database
 ```
 
-- For Railway deployments, the recommended simple setup is to set `LOG_DB_NAME` equal to `DB_NAME`
+- For Aiven deployments, set `DB_SSL_MODE=verify-ca`, point `DB_SSL_CA` to the Aiven CA certificate file, and set `LOG_DB_NAME` equal to `DB_NAME` for the simplest single-database setup
 - In hosted environments, set `CORS_ALLOW_ALL=false` and configure `CORS_ALLOWED_ORIGINS` to the deployed frontend origin
 
 ## Migration and Legacy Record Repair

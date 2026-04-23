@@ -1,8 +1,8 @@
 import React from 'react';
 import { TrendingUp, Award, Users, FileText } from 'lucide-react';
 import { useApp } from '../../context/AppContext';
-import { Badge, getGradeBadge } from '../../components/shared/Badge';
 import { QuestionAnalyticsSection } from '../../components/analytics/QuestionAnalyticsSection';
+import { PaginatedTable } from '../../components/shared/PaginatedTable';
 import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
   PieChart, Pie, Cell, Legend, LineChart, Line
@@ -193,17 +193,23 @@ export function AdminReports() {
         <div className="px-5 py-4 border-b border-gray-100">
           <h2 className="text-sm font-semibold text-gray-900">Top Performers</h2>
         </div>
-        <table className="w-full text-sm">
-          <thead className="bg-gray-50">
-            <tr className="text-xs text-gray-400 uppercase tracking-wider">
-              <th className="px-5 py-3 text-left font-medium">Rank</th>
-              <th className="px-5 py-3 text-left font-medium">Student</th>
-              <th className="px-5 py-3 text-left font-medium">Avg Score</th>
-              <th className="px-5 py-3 text-left font-medium">Exams</th>
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-gray-50">
-            {topStudents.map((s, i) => (
+        <PaginatedTable
+          items={topStudents}
+          colSpan={4}
+          minWidthClassName="min-w-[620px]"
+          bodyClassName="divide-y divide-gray-50"
+          header={(
+            <thead className="bg-gray-50">
+              <tr className="text-xs text-gray-400 uppercase tracking-wider">
+                <th className="px-5 py-3 text-left font-medium">Rank</th>
+                <th className="px-5 py-3 text-left font-medium">Student</th>
+                <th className="px-5 py-3 text-left font-medium">Avg Score</th>
+                <th className="px-5 py-3 text-left font-medium">Exams</th>
+              </tr>
+            </thead>
+          )}
+          emptyRow={<div className="px-5 py-8 text-center text-gray-300 text-sm">No data available</div>}
+          renderRow={(s, i) => (
               <tr key={s.name} className="hover:bg-gray-50">
                 <td className="px-5 py-3">
                   <span className="w-6 h-6 rounded-full bg-gray-100 flex items-center justify-center text-xs font-semibold text-gray-600">
@@ -228,12 +234,8 @@ export function AdminReports() {
                 </td>
                 <td className="px-5 py-3 text-gray-400 text-sm">{s.exams}</td>
               </tr>
-            ))}
-            {topStudents.length === 0 && (
-              <tr><td colSpan={4} className="px-5 py-8 text-center text-gray-300 text-sm">No data available</td></tr>
-            )}
-          </tbody>
-        </table>
+          )}
+        />
       </div>
 
       <QuestionAnalyticsSection audienceLabel="Admin" />

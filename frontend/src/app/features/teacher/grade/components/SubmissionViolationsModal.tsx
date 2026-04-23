@@ -38,8 +38,8 @@ export function SubmissionViolationsModal({
         ) : (
           <div className="space-y-3">
             <p className="text-xs text-gray-500">{violations.length} violation event(s) recorded for this student.</p>
-            <div className="overflow-x-auto rounded-xl border border-gray-200">
-              <table className="w-full text-xs">
+            <div className="data-table-scroll overflow-x-auto rounded-xl border border-gray-200">
+              <table className="w-full min-w-[680px] text-xs">
                 <thead>
                   <tr className="bg-gray-50 border-b border-gray-200">
                     <th className="px-3 py-2.5 text-left font-semibold text-gray-600">#</th>

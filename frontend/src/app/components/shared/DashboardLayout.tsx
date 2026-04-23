@@ -34,7 +34,7 @@ export function DashboardLayout({ navItems, roleLabel }: DashboardLayoutProps) {
     .slice(0, 2) || 'U';
 
   const SidebarContent = () => (
-    <div className="portal-sidebar h-full rounded-[1.75rem] border border-gray-200 bg-white/85 shadow-[0_28px_56px_-36px_rgba(53,31,15,0.7)] backdrop-blur-xl flex flex-col overflow-hidden">
+    <div className="portal-sidebar h-full min-h-0 rounded-[1.75rem] border border-gray-200 bg-white/85 shadow-[0_28px_56px_-36px_rgba(53,31,15,0.7)] backdrop-blur-xl flex flex-col overflow-hidden">
       <div className="px-5 py-5 border-b border-gray-100">
         <div className="flex items-center gap-3">
           <div className="w-11 h-11 rounded-2xl bg-gray-900 flex items-center justify-center shadow-[0_12px_24px_-12px_rgba(51,26,10,0.8)]">
@@ -47,7 +47,7 @@ export function DashboardLayout({ navItems, roleLabel }: DashboardLayoutProps) {
         </div>
       </div>
 
-      <nav className="flex-1 px-3 py-4 space-y-1">
+      <nav className="portal-sidebar-nav min-h-0 flex-1 overflow-y-auto overscroll-contain px-3 py-4 space-y-1">
         {navItems.map(item => (
           <NavLink
             key={item.path}
@@ -103,7 +103,7 @@ export function DashboardLayout({ navItems, roleLabel }: DashboardLayoutProps) {
       {sidebarOpen && (
         <div className="lg:hidden fixed inset-0 z-50 flex">
           <div className="fixed inset-0 bg-black/35 backdrop-blur-sm" onClick={() => setSidebarOpen(false)} />
-          <div className="relative w-[84vw] max-w-[310px] h-full p-3">
+          <div className="relative w-[84vw] max-w-[310px] h-dvh min-h-0 p-3">
             <SidebarContent />
           </div>
           <button
