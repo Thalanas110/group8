@@ -3,7 +3,7 @@
 
 USE examhub_logs;
 
--- ── Table ─────────────────────────────────────────────────────────────────────
+--  Table 
 
 CREATE TABLE IF NOT EXISTS exam_violations (
   id            BIGINT UNSIGNED  NOT NULL AUTO_INCREMENT,
@@ -19,7 +19,7 @@ CREATE TABLE IF NOT EXISTS exam_violations (
   KEY idx_ev_occurred_at (occurred_at)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
--- ── Stored Procedures ─────────────────────────────────────────────────────────
+--  Stored Procedures 
 
 DROP PROCEDURE IF EXISTS sp_violation_create;
 DROP PROCEDURE IF EXISTS sp_violation_list_by_exam;

@@ -53,6 +53,10 @@ export function violationTypeLabel(type: string): string {
       return 'Right Click';
     case 'auto_submitted':
       return 'Auto-Submitted';
+    case 'fullscreen_exit':
+      return 'Fullscreen Exit';
+    case 'multiple_monitors':
+      return 'Multiple Monitors';
     default:
       return type;
   }

@@ -4,7 +4,7 @@
 
 USE examhub_logs;
 
--- ── Table ─────────────────────────────────────────────────────────────────────
+--  Table 
 
 CREATE TABLE IF NOT EXISTS violation_cases (
   id             CHAR(36)         NOT NULL,
@@ -26,7 +26,7 @@ CREATE TABLE IF NOT EXISTS violation_cases (
   KEY idx_violation_cases_outcome    (outcome)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
--- ── Stored Procedures ─────────────────────────────────────────────────────────
+--  Stored Procedures 
 
 DROP PROCEDURE IF EXISTS sp_violation_case_upsert;
 DROP PROCEDURE IF EXISTS sp_violation_case_get_by_exam;

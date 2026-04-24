@@ -51,7 +51,7 @@ DROP PROCEDURE IF EXISTS sp_log_request_create;
 DROP PROCEDURE IF EXISTS sp_log_audit_create;
 DROP PROCEDURE IF EXISTS sp_log_retention_purge;
 
--- ── Exam Anti-Cheat Violations ────────────────────────────────────────────────
+--  Exam Anti-Cheat Violations 
 -- Declared here (before the stored procs) so sp_log_retention_purge can safely
 -- reference the table at CREATE time on strict MySQL configurations.
 

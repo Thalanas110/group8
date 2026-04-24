@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router';
-import { BookOpen, Eye, EyeOff, UserPlus } from 'lucide-react';
+import { BookOpen, Eye, EyeOff, UserPlus, X, ScrollText } from 'lucide-react';
 import { useApp } from '../../context/AppContext';
 import { UserRole } from '../../data/types';
 
@@ -18,6 +18,8 @@ export function Register() {
   const [showPwd, setShowPwd] = useState(false);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+  const [agreedToTerms, setAgreedToTerms] = useState(false);
+  const [showTerms, setShowTerms] = useState(false);
 
   useEffect(() => {
     if (currentUser) navigate(`/${currentUser.role}`, { replace: true });
@@ -36,6 +38,11 @@ export function Register() {
     }
 
     setLoading(true);
+    if (!agreedToTerms) {
+      setError('You must agree to the Terms & Conditions to register.');
+      setLoading(false);
+      return;
+    }
     const result = await register({
       name: form.name,
       email: form.email,
@@ -51,6 +58,63 @@ export function Register() {
 
   return (
     <div className="min-h-screen relative overflow-hidden px-4 py-8 sm:px-6 lg:px-8 lg:flex lg:items-center">
+      {/* ── Terms & Conditions Modal ─────────────────────────────────────── */}
+      {showTerms && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
+          <div className="bg-white rounded-2xl shadow-xl w-full max-w-lg max-h-[80vh] flex flex-col">
+            <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100">
+              <div className="flex items-center gap-2">
+                <ScrollText className="w-5 h-5 text-gray-700" />
+                <h2 className="text-base font-bold text-gray-900">Terms &amp; Conditions</h2>
+              </div>
+              <button onClick={() => setShowTerms(false)} className="p-1 rounded-lg hover:bg-gray-100 transition-colors">
+                <X className="w-4 h-4 text-gray-500" />
+              </button>
+            </div>
+            <div className="overflow-y-auto px-6 py-4 text-sm text-gray-700 space-y-4 leading-relaxed">
+              <p className="text-xs text-gray-400 uppercase tracking-wide font-semibold">Effective date: April 19, 2026</p>
+
+              <section>
+                <h3 className="font-semibold text-gray-900 mb-1">1. Acceptance of Terms</h3>
+                <p>By creating an account on ExamHub, you agree to be bound by these Terms &amp; Conditions and our Academic Integrity Policy. If you do not agree, do not register.</p>
+              </section>
+
+              <section>
+                <h3 className="font-semibold text-gray-900 mb-1">2. Account Responsibilities</h3>
+                <p>You are responsible for maintaining the confidentiality of your login credentials. You must not share your account with any other person. You agree to provide accurate and truthful registration information.</p>
+              </section>
+
+              <section>
+                <h3 className="font-semibold text-gray-900 mb-1">3. Academic Integrity</h3>
+                <p>ExamHub is used for academic assessment. Any attempt to cheat, circumvent proctoring measures, or misrepresent your identity during an exam is strictly prohibited and may result in account suspension and referral to your institution's disciplinary committee.</p>
+              </section>
+
+              <section>
+                <h3 className="font-semibold text-gray-900 mb-1">4. Exam Monitoring</h3>
+                <p>During assessments, the platform monitors browser activity including tab switches, window focus changes, and full-screen status. This data is visible to your teachers and administrators for the purpose of academic integrity review.</p>
+              </section>
+
+              <section>
+                <h3 className="font-semibold text-gray-900 mb-1">5. Data Privacy</h3>
+                <p>We collect and store your name, email, role, exam submissions, and activity logs. This data is used solely for academic purposes and is not shared with third parties outside your institution.</p>
+              </section>
+
+              <section>
+                <h3 className="font-semibold text-gray-900 mb-1">6. Termination</h3>
+                <p>Administrators may suspend or terminate accounts that violate these terms. Students and teachers may request account deletion by contacting their institution's administrator.</p>
+              </section>
+            </div>
+            <div className="px-6 py-4 border-t border-gray-100">
+              <button
+                onClick={() => { setAgreedToTerms(true); setShowTerms(false); }}
+                className="w-full bg-gray-900 text-white py-2.5 rounded-xl text-sm font-semibold hover:bg-gray-700 transition-colors"
+              >
+                I Have Read and Agree
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
       <div className="absolute inset-0 pointer-events-none">
         <div className="absolute -top-24 right-0 w-80 h-80 rounded-full bg-teal-300/25 blur-3xl" />
         <div className="absolute bottom-0 -left-12 w-72 h-72 rounded-full bg-orange-300/35 blur-3xl" />
@@ -164,9 +228,29 @@ export function Register() {
             </div>
           </div>
 
+          {/* Terms & Conditions checkbox */}
+          <label className="flex items-start gap-3 cursor-pointer select-none group mt-1">
+            <input
+              type="checkbox"
+              checked={agreedToTerms}
+              onChange={e => setAgreedToTerms(e.target.checked)}
+              className="mt-0.5 w-4 h-4 rounded border-gray-300 accent-gray-900 flex-shrink-0 cursor-pointer"
+            />
+            <span className="text-sm text-gray-600 leading-relaxed group-hover:text-gray-800 transition-colors">
+              I have read and agree to the{' '}
+              <button
+                type="button"
+                onClick={() => setShowTerms(true)}
+                className="text-gray-900 font-semibold underline underline-offset-2 hover:text-gray-600 transition-colors"
+              >
+                Terms &amp; Conditions
+              </button>
+            </span>
+          </label>
+
           <button
             type="submit"
-            disabled={loading}
+            disabled={loading || !agreedToTerms}
             className="w-full bg-gray-900 text-white py-3 px-4 rounded-2xl disabled:opacity-60 disabled:cursor-not-allowed flex items-center justify-center gap-2 text-sm font-semibold transition-colors mt-3"
           >
             {loading ? (

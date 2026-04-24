@@ -318,7 +318,7 @@ export function ExamAccommodationsModal({ exam, classes, users, onClose }: Props
   );
 }
 
-// ─── Accommodation Form Fields ────────────────────────────────────────────────
+//  Accommodation Form Fields 
 
 interface FormProps {
   exam: Exam;

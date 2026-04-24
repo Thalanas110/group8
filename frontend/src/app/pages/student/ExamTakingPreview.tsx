@@ -12,7 +12,7 @@ import {
   AlertTriangle,
 } from 'lucide-react';
 
-// ── Static mock data ──────────────────────────────────────────────────────────
+//  Static mock data 
 
 const EXAM = {
   title: 'DSA Final Exam',
@@ -74,7 +74,7 @@ const PRESET_FLAGGED = new Set(['q4']);
 
 const OPTION_LETTERS = ['A', 'B', 'C', 'D'];
 
-// ── Component ─────────────────────────────────────────────────────────────────
+//  Component 
 
 export function ExamTakingPreview() {
   const [currentQ, setCurrentQ] = useState(0);
@@ -128,7 +128,7 @@ export function ExamTakingPreview() {
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col font-sans">
 
-      {/* ── Top Header ─────────────────────────────────────────────────────────── */}
+      {/*  Top Header  */}
       <div className="bg-white border-b border-gray-200 sticky top-0 z-20 shadow-sm">
         {/* Progress bar */}
         <div className="h-1 bg-gray-100">
@@ -187,10 +187,10 @@ export function ExamTakingPreview() {
         </div>
       </div>
 
-      {/* ── Body ───────────────────────────────────────────────────────────────── */}
+      {/*  Body  */}
       <div className="flex flex-1 overflow-hidden">
 
-        {/* ── Left sidebar ─────────────────────────────────────────────────────── */}
+        {/*  Left sidebar  */}
         <aside className="hidden md:flex flex-col w-56 bg-white border-r border-gray-200 flex-shrink-0 overflow-y-auto">
           <div className="p-4 border-b border-gray-100">
             <div className="flex items-center gap-2 text-xs font-semibold text-gray-500 uppercase tracking-wide mb-3">
@@ -282,7 +282,7 @@ export function ExamTakingPreview() {
           </div>
         </aside>
 
-        {/* ── Main: Question Content ────────────────────────────────────────────── */}
+        {/*  Main: Question Content  */}
         <main className="flex-1 overflow-y-auto p-4 lg:p-6">
           <div className="max-w-2xl mx-auto space-y-4">
 
