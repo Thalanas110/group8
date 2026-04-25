@@ -16,6 +16,7 @@ import { Badge, getGradeBadge, getStatusBadge } from '../../components/shared/Ba
 import { StatCard } from '../../components/shared/StatCard';
 import { useApp } from '../../context/AppContext';
 import type { Class, Exam, ExamStatus, Question, QuestionType, Submission, User } from '../../data/types';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../../components/ui/select';
 import {
   csvRowsToRecords,
   downloadCsv,
@@ -746,15 +747,16 @@ export function ImportExportTools({ audience }: ImportExportToolsProps) {
         <ToolCard icon={Users} title="Class Rosters">
           <div>
             <FieldLabel>Class</FieldLabel>
-            <select
-              value={selectedClassId}
-              onChange={event => setSelectedClassId(event.target.value)}
-              className="w-full px-3 py-2.5 border border-gray-300 rounded-xl text-sm bg-white"
-            >
-              {visibleClasses.map(item => (
-                <option key={item.id} value={item.id}>{item.name} - {item.code}</option>
-              ))}
-            </select>
+            <Select value={selectedClassId} onValueChange={setSelectedClassId}>
+              <SelectTrigger className="w-full">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {visibleClasses.map(item => (
+                  <SelectItem key={item.id} value={item.id}>{item.name} - {item.code}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
 
           {selectedClass && (
@@ -788,15 +790,16 @@ export function ImportExportTools({ audience }: ImportExportToolsProps) {
         <ToolCard icon={Archive} title="Exam Backups">
           <div>
             <FieldLabel>Exam</FieldLabel>
-            <select
-              value={selectedExamId}
-              onChange={event => setSelectedExamId(event.target.value)}
-              className="w-full px-3 py-2.5 border border-gray-300 rounded-xl text-sm bg-white"
-            >
-              {visibleExams.map(item => (
-                <option key={item.id} value={item.id}>{item.title}</option>
-              ))}
-            </select>
+            <Select value={selectedExamId} onValueChange={setSelectedExamId}>
+              <SelectTrigger className="w-full">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {visibleExams.map(item => (
+                  <SelectItem key={item.id} value={item.id}>{item.title}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
 
           {selectedExam && (
@@ -839,36 +842,39 @@ export function ImportExportTools({ audience }: ImportExportToolsProps) {
                   className="w-full rounded-xl border border-gray-300 bg-white py-2.5 pr-3 pl-9 text-sm"
                 />
               </div>
-              <select
-                value={resultStudentId}
-                onChange={event => setResultStudentId(event.target.value)}
-                className="w-full px-3 py-2.5 border border-gray-300 rounded-xl text-sm bg-white"
-              >
-                <option value="all">All students</option>
-                {resultStudentOptions.map(option => (
-                  <option key={option.id} value={option.id}>{option.label}</option>
-                ))}
-              </select>
-              <select
-                value={resultCourseId}
-                onChange={event => setResultCourseId(event.target.value)}
-                className="w-full px-3 py-2.5 border border-gray-300 rounded-xl text-sm bg-white"
-              >
-                <option value="all">All courses</option>
-                {resultCourseOptions.map(option => (
-                  <option key={option.id} value={option.id}>{option.label}</option>
-                ))}
-              </select>
-              <select
-                value={resultExamId}
-                onChange={event => setResultExamId(event.target.value)}
-                className="w-full px-3 py-2.5 border border-gray-300 rounded-xl text-sm bg-white"
-              >
-                <option value="all">All exams</option>
-                {resultExamOptions.map(option => (
-                  <option key={option.id} value={option.id}>{option.label}</option>
-                ))}
-              </select>
+              <Select value={resultStudentId} onValueChange={setResultStudentId}>
+                <SelectTrigger className="w-full">
+                  <SelectValue placeholder="All students" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All students</SelectItem>
+                  {resultStudentOptions.map(option => (
+                    <SelectItem key={option.id} value={option.id}>{option.label}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <Select value={resultCourseId} onValueChange={setResultCourseId}>
+                <SelectTrigger className="w-full">
+                  <SelectValue placeholder="All courses" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All courses</SelectItem>
+                  {resultCourseOptions.map(option => (
+                    <SelectItem key={option.id} value={option.id}>{option.label}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <Select value={resultExamId} onValueChange={setResultExamId}>
+                <SelectTrigger className="w-full">
+                  <SelectValue placeholder="All exams" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All exams</SelectItem>
+                  {resultExamOptions.map(option => (
+                    <SelectItem key={option.id} value={option.id}>{option.label}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
             <div className="flex flex-wrap items-center justify-between gap-2 text-xs text-gray-500">
               <span>
@@ -888,21 +894,18 @@ export function ImportExportTools({ audience }: ImportExportToolsProps) {
 
           <div>
             <FieldLabel>Result</FieldLabel>
-            <select
-              value={selectedSubmissionId}
-              onChange={event => setSelectedSubmissionId(event.target.value)}
-              className="w-full px-3 py-2.5 border border-gray-300 rounded-xl text-sm bg-white"
-              disabled={filteredResultRows.length === 0}
-            >
-              {filteredResultRows.length === 0 && (
-                <option value="">No matching graded results</option>
-              )}
-              {filteredResultRows.map(row => (
-                <option key={row.submission.id} value={row.submission.id}>
-                  {row.student?.name || 'Unknown'} - {row.exam?.title || 'Exam'} - {row.examClass?.name || 'Class'} - {row.gradeLabel}
-                </option>
-              ))}
-            </select>
+            <Select value={selectedSubmissionId} onValueChange={setSelectedSubmissionId} disabled={filteredResultRows.length === 0}>
+              <SelectTrigger className="w-full">
+                <SelectValue placeholder="No matching graded results" />
+              </SelectTrigger>
+              <SelectContent>
+                {filteredResultRows.map(row => (
+                  <SelectItem key={row.submission.id} value={row.submission.id}>
+                    {row.student?.name || 'Unknown'} - {row.exam?.title || 'Exam'} - {row.examClass?.name || 'Class'} - {row.gradeLabel}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
 
           {selectedResultRow && (
@@ -936,15 +939,16 @@ export function ImportExportTools({ audience }: ImportExportToolsProps) {
         <ToolCard icon={BarChart2} title="CSV Analytics">
           <div>
             <FieldLabel>Dataset</FieldLabel>
-            <select
-              value={analyticsKind}
-              onChange={event => setAnalyticsKind(event.target.value as AnalyticsExportKind)}
-              className="w-full px-3 py-2.5 border border-gray-300 rounded-xl text-sm bg-white"
-            >
-              <option value="submissions">Submission analytics</option>
-              <option value="classes">Class performance</option>
-              <option value="exams">Exam summaries</option>
-            </select>
+            <Select value={analyticsKind} onValueChange={value => setAnalyticsKind(value as AnalyticsExportKind)}>
+              <SelectTrigger className="w-full">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="submissions">Submission analytics</SelectItem>
+                <SelectItem value="classes">Class performance</SelectItem>
+                <SelectItem value="exams">Exam summaries</SelectItem>
+              </SelectContent>
+            </Select>
           </div>
 
           <div className="grid grid-cols-3 gap-2 text-center">

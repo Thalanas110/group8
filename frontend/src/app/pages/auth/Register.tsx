@@ -3,6 +3,7 @@ import { Link, useNavigate } from 'react-router';
 import { BookOpen, Eye, EyeOff, UserPlus, X, ScrollText } from 'lucide-react';
 import { useApp } from '../../context/AppContext';
 import { UserRole } from '../../data/types';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../../components/ui/select';
 
 export function Register() {
   const { register, currentUser } = useApp();
@@ -173,14 +174,15 @@ export function Register() {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
               <label className="block text-[11px] font-semibold text-gray-700 mb-2 uppercase tracking-[0.14em]">Role</label>
-              <select
-                value={form.role}
-                onChange={e => update('role', e.target.value)}
-                className="w-full px-4 py-3 border border-gray-200 rounded-2xl focus:outline-none text-sm"
-              >
-                <option value="student">Student</option>
-                <option value="teacher">Teacher</option>
-              </select>
+              <Select value={form.role} onValueChange={value => update('role', value)}>
+                <SelectTrigger className="w-full">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="student">Student</SelectItem>
+                  <SelectItem value="teacher">Teacher</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
             <div>
               <label className="block text-[11px] font-semibold text-gray-700 mb-2 uppercase tracking-[0.14em]">Department / Major</label>

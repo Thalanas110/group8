@@ -6,6 +6,7 @@ import { ConfirmDialog, Modal } from '../../components/shared/Modal';
 import { PaginatedTable } from '../../components/shared/PaginatedTable';
 import { ExamStatus } from '../../data/types';
 import { toast } from 'sonner';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../../components/ui/select';
 
 export function AdminExams() {
   const { exams, classes, users, submissions, deleteExam, updateExam, getSubmissionsByExam, getUserById } = useApp();
@@ -130,12 +131,16 @@ export function AdminExams() {
                   <td className="px-6 py-3.5 text-gray-500">{cls?.name || '—'}</td>
                   <td className="px-6 py-3.5 text-gray-500">{teacher?.name || '—'}</td>
                   <td className="px-6 py-3.5">
-                    <select value={exam.status} onChange={e => handleStatusChange(exam.id, e.target.value as ExamStatus)}
-                      className="text-xs border-0 bg-transparent focus:outline-none cursor-pointer">
-                      <option value="draft">Draft</option>
-                      <option value="published">Published</option>
-                      <option value="completed">Completed</option>
-                    </select>
+                    <Select value={exam.status} onValueChange={value => handleStatusChange(exam.id, value as ExamStatus)} size="sm">
+                      <SelectTrigger className="w-32">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="draft">Draft</SelectItem>
+                        <SelectItem value="published">Published</SelectItem>
+                        <SelectItem value="completed">Completed</SelectItem>
+                      </SelectContent>
+                    </Select>
                   </td>
                   <td className="px-6 py-3.5 text-gray-500">
                     <div className="flex items-center gap-1.5 text-xs">

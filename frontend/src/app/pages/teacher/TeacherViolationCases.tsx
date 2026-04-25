@@ -1,10 +1,11 @@
 import React, { useMemo } from 'react';
-import { CheckCircle2, ChevronDown, RefreshCw, ShieldAlert } from 'lucide-react';
+import { CheckCircle2, RefreshCw, ShieldAlert } from 'lucide-react';
 import { useApp } from '../../context/AppContext';
 import { ReviewModal } from '../../features/teacher/violation-cases/ReviewModal';
 import { useViolationCases } from '../../features/teacher/violation-cases/useViolationCases';
 import { ViolationCasesTable } from '../../features/teacher/violation-cases/ViolationCasesTable';
 import { VIOLATION_REVIEW_MODE_OPTIONS } from '../../features/teacher/violation-cases/case-meta';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../../components/ui/select';
 
 export function TeacherViolationCases() {
   const { currentUser, exams, classes, users } = useApp();
@@ -82,35 +83,34 @@ export function TeacherViolationCases() {
         <div className="flex flex-col lg:flex-row lg:items-center gap-3">
           <div className="flex flex-col sm:flex-row sm:items-center gap-3">
             <label className="text-sm font-semibold text-gray-700 shrink-0">Review Mode</label>
-            <div className="relative flex-1 min-w-[220px]">
-              <select
-                value={reviewMode}
-                onChange={event => setReviewMode(event.target.value as typeof reviewMode)}
-                className="w-full appearance-none border border-gray-200 rounded-xl px-3 py-2.5 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-amber-400 pr-8"
-              >
-                {VIOLATION_REVIEW_MODE_OPTIONS.map(option => (
-                  <option key={option.value} value={option.value}>{option.label}</option>
-                ))}
-              </select>
-              <ChevronDown className="pointer-events-none absolute right-2.5 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+            <div className="flex-1 min-w-[220px]">
+              <Select value={reviewMode} onValueChange={value => setReviewMode(value as typeof reviewMode)}>
+                <SelectTrigger className="w-full">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {VIOLATION_REVIEW_MODE_OPTIONS.map(option => (
+                    <SelectItem key={option.value} value={option.value}>{option.label}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
           </div>
 
           {reviewMode === 'per_exam' && (
             <div className="flex flex-col sm:flex-row sm:items-center gap-3">
               <label className="text-sm font-semibold text-gray-700 shrink-0">Select Exam</label>
-              <div className="relative flex-1 min-w-[280px]">
-                <select
-                  value={selectedExamId}
-                  onChange={event => setSelectedExamId(event.target.value)}
-                  className="w-full appearance-none border border-gray-200 rounded-xl px-3 py-2.5 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-amber-400 pr-8"
-                >
-                  {myExams.length === 0 && <option value="">No exams available</option>}
-                  {myExams.map(exam => (
-                    <option key={exam.id} value={exam.id}>{exam.title}</option>
-                  ))}
-                </select>
-                <ChevronDown className="pointer-events-none absolute right-2.5 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+              <div className="flex-1 min-w-[280px]">
+                <Select value={selectedExamId} onValueChange={setSelectedExamId}>
+                  <SelectTrigger className="w-full">
+                    <SelectValue placeholder="No exams available" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {myExams.map(exam => (
+                      <SelectItem key={exam.id} value={exam.id}>{exam.title}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
             </div>
           )}
@@ -118,18 +118,17 @@ export function TeacherViolationCases() {
           {reviewMode === 'per_student' && (
             <div className="flex flex-col sm:flex-row sm:items-center gap-3">
               <label className="text-sm font-semibold text-gray-700 shrink-0">Select Student</label>
-              <div className="relative flex-1 min-w-[260px]">
-                <select
-                  value={selectedStudentId}
-                  onChange={event => setSelectedStudentId(event.target.value)}
-                  className="w-full appearance-none border border-gray-200 rounded-xl px-3 py-2.5 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-amber-400 pr-8"
-                >
-                  {studentOptions.length === 0 && <option value="">No students with violations</option>}
-                  {studentOptions.map(option => (
-                    <option key={option.id} value={option.id}>{option.label}</option>
-                  ))}
-                </select>
-                <ChevronDown className="pointer-events-none absolute right-2.5 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+              <div className="flex-1 min-w-[260px]">
+                <Select value={selectedStudentId} onValueChange={setSelectedStudentId}>
+                  <SelectTrigger className="w-full">
+                    <SelectValue placeholder="No students with violations" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {studentOptions.map(option => (
+                      <SelectItem key={option.id} value={option.id}>{option.label}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
             </div>
           )}
@@ -137,18 +136,17 @@ export function TeacherViolationCases() {
           {reviewMode === 'per_course' && (
             <div className="flex flex-col sm:flex-row sm:items-center gap-3">
               <label className="text-sm font-semibold text-gray-700 shrink-0">Select Course</label>
-              <div className="relative flex-1 min-w-[260px]">
-                <select
-                  value={selectedCourseId}
-                  onChange={event => setSelectedCourseId(event.target.value)}
-                  className="w-full appearance-none border border-gray-200 rounded-xl px-3 py-2.5 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-amber-400 pr-8"
-                >
-                  {courseOptions.length === 0 && <option value="">No courses with violations</option>}
-                  {courseOptions.map(option => (
-                    <option key={option.id} value={option.id}>{option.label}</option>
-                  ))}
-                </select>
-                <ChevronDown className="pointer-events-none absolute right-2.5 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+              <div className="flex-1 min-w-[260px]">
+                <Select value={selectedCourseId} onValueChange={setSelectedCourseId}>
+                  <SelectTrigger className="w-full">
+                    <SelectValue placeholder="No courses with violations" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {courseOptions.map(option => (
+                      <SelectItem key={option.id} value={option.id}>{option.label}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
             </div>
           )}

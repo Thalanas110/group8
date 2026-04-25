@@ -1,5 +1,6 @@
 import { PlusCircle, X } from 'lucide-react';
 import type { Question } from '../../../../data/types';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../../../../components/ui/select';
 
 interface QuestionEditorCardProps {
   index: number;
@@ -48,18 +49,22 @@ export function QuestionEditorCard({
         <div className="grid grid-cols-2 gap-3">
           <div>
             <label className="block text-xs font-medium text-gray-500 mb-1">Type</label>
-            <select
+            <Select
               value={question.type}
-              onChange={event => onUpdateQuestion(index, {
-                type: event.target.value as Question['type'],
-                options: event.target.value === 'mcq' ? ['', '', '', ''] : undefined,
+              onValueChange={value => onUpdateQuestion(index, {
+                type: value as Question['type'],
+                options: value === 'mcq' ? ['', '', '', ''] : undefined,
               })}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-gray-900 bg-white"
             >
-              <option value="mcq">Multiple Choice</option>
-              <option value="short_answer">Short Answer</option>
-              <option value="essay">Essay</option>
-            </select>
+              <SelectTrigger className="w-full">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="mcq">Multiple Choice</SelectItem>
+                <SelectItem value="short_answer">Short Answer</SelectItem>
+                <SelectItem value="essay">Essay</SelectItem>
+              </SelectContent>
+            </Select>
           </div>
           <div>
             <label className="block text-xs font-medium text-gray-500 mb-1">Marks</label>

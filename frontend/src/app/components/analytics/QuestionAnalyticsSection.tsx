@@ -20,6 +20,13 @@ import { EmptyState } from '../../features/analytics/question-analytics/componen
 import { ListCard } from '../../features/analytics/question-analytics/components/ListCard';
 import { PaginatedTable } from '../shared/PaginatedTable';
 import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '../ui/select';
+import {
   filterQuestions,
   filterWeakTopics,
   filterWrongAnswers,
@@ -35,8 +42,6 @@ import { formatSeconds, scoreTone } from '../../features/analytics/question-anal
 type QuestionAnalyticsSectionProps = {
   audienceLabel: 'Teacher' | 'Admin';
 };
-
-const selectClassNames = 'w-full rounded-xl border border-gray-200 bg-white px-3 py-2.5 text-sm text-gray-700 focus:outline-none focus:ring-2 focus:ring-gray-900';
 
 export function QuestionAnalyticsSection({ audienceLabel }: QuestionAnalyticsSectionProps) {
   const [report, setReport] = useState<QuestionAnalyticsReport | null>(null);
@@ -190,24 +195,39 @@ export function QuestionAnalyticsSection({ audienceLabel }: QuestionAnalyticsSec
           <h3 className="text-sm font-semibold text-gray-900">Scope Filters</h3>
         </div>
         <div className="grid gap-3 md:grid-cols-3">
-          <select value={selectedClass} onChange={e => setSelectedClass(e.target.value)} className={selectClassNames}>
-            <option value="all">All classes</option>
-            {classOptions.map(option => (
-              <option key={option.id} value={option.id}>{option.name}</option>
-            ))}
-          </select>
-          <select value={selectedExam} onChange={e => setSelectedExam(e.target.value)} className={selectClassNames}>
-            <option value="all">All exams</option>
-            {examOptions.map(option => (
-              <option key={option.id} value={option.id}>{option.title}</option>
-            ))}
-          </select>
-          <select value={selectedTopic} onChange={e => setSelectedTopic(e.target.value)} className={selectClassNames}>
-            <option value="all">All topics</option>
-            {topicOptions.map(option => (
-              <option key={option} value={option}>{option}</option>
-            ))}
-          </select>
+          <Select value={selectedClass} onValueChange={setSelectedClass}>
+            <SelectTrigger className="w-full">
+              <SelectValue placeholder="All classes" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All classes</SelectItem>
+              {classOptions.map(option => (
+                <SelectItem key={option.id} value={option.id}>{option.name}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          <Select value={selectedExam} onValueChange={setSelectedExam}>
+            <SelectTrigger className="w-full">
+              <SelectValue placeholder="All exams" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All exams</SelectItem>
+              {examOptions.map(option => (
+                <SelectItem key={option.id} value={option.id}>{option.title}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          <Select value={selectedTopic} onValueChange={setSelectedTopic}>
+            <SelectTrigger className="w-full">
+              <SelectValue placeholder="All topics" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All topics</SelectItem>
+              {topicOptions.map(option => (
+                <SelectItem key={option} value={option}>{option}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
         </div>
         <p className="mt-3 text-xs text-gray-500">
           Time-based metrics only appear for newer attempts that submitted telemetry. Topic-based insights only use questions tagged with a topic.

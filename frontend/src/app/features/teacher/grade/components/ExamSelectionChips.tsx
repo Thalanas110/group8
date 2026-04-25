@@ -1,6 +1,7 @@
 import { Search } from 'lucide-react';
 import { useMemo, useState } from 'react';
 import type { Class, Exam } from '../../../../data/types';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../../../../components/ui/select';
 
 interface ExamSelectionChipsProps {
   exams: Exam[];
@@ -66,18 +67,19 @@ export function ExamSelectionChips({
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-2">
-        <select
-          value={selectedCourse ?? ''}
-          onChange={event => onToggleCourse(event.target.value || null)}
-          className="w-full px-3 py-2.5 border border-gray-200 rounded-xl text-sm bg-white"
-        >
-          <option value="">All Courses</option>
-          {courseOptions.map(option => (
-            <option key={option.id} value={option.id}>
-              {option.label}
-            </option>
-          ))}
-        </select>
+        <Select value={selectedCourse ?? '__all__'} onValueChange={value => onToggleCourse(value === '__all__' ? null : value)}>
+          <SelectTrigger className="w-full">
+            <SelectValue placeholder="All Courses" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="__all__">All Courses</SelectItem>
+            {courseOptions.map(option => (
+              <SelectItem key={option.id} value={option.id}>
+                {option.label}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
 
         <div className="relative md:col-span-2">
           <Search className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
@@ -91,18 +93,19 @@ export function ExamSelectionChips({
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-[minmax(0,1fr)_auto] gap-2 items-center">
-        <select
-          value={selectedExam ?? ''}
-          onChange={event => onToggleExam(event.target.value || null)}
-          className="w-full px-3 py-2.5 border border-gray-200 rounded-xl text-sm bg-white"
-        >
-          <option value="">All Exams</option>
-          {selectOptions.map(exam => (
-            <option key={exam.id} value={exam.id}>
-              {exam.title}
-            </option>
-          ))}
-        </select>
+        <Select value={selectedExam ?? '__all__'} onValueChange={value => onToggleExam(value === '__all__' ? null : value)}>
+          <SelectTrigger className="w-full">
+            <SelectValue placeholder="All Exams" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="__all__">All Exams</SelectItem>
+            {selectOptions.map(exam => (
+              <SelectItem key={exam.id} value={exam.id}>
+                {exam.title}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
 
         {query && (
           <button

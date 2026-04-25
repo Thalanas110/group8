@@ -1,8 +1,9 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router';
-import { Clock, Search, CheckCircle2, AlertCircle, BookOpen, Calendar, ChevronDown, UserCog } from 'lucide-react';
+import { Clock, Search, CheckCircle2, AlertCircle, BookOpen, Calendar, UserCog } from 'lucide-react';
 import { useApp } from '../../context/AppContext';
 import { Badge, getStatusBadge } from '../../components/shared/Badge';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../../components/ui/select';
 
 type ExamFilter = 'all' | 'available' | 'submitted' | 'graded';
 
@@ -58,20 +59,19 @@ export function StudentExams() {
         <label htmlFor="exam-filter" className="block text-xs font-semibold uppercase tracking-[0.18em] text-gray-400">
           Filter Exams
         </label>
-        <div className="relative mt-2">
-          <select
-            id="exam-filter"
-            value={filter}
-            onChange={e => setFilter(e.target.value as ExamFilter)}
-            className="w-full appearance-none rounded-2xl border border-gray-200 bg-white px-4 py-3 pr-11 text-sm font-medium text-gray-900 shadow-sm focus:outline-none focus:ring-2 focus:ring-gray-900"
-          >
-            {tabs.map(tab => (
-              <option key={tab.key} value={tab.key}>
-                {tab.label} ({tab.count})
-              </option>
-            ))}
-          </select>
-          <ChevronDown className="pointer-events-none absolute right-4 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
+        <div className="mt-2">
+          <Select value={filter} onValueChange={value => setFilter(value as ExamFilter)}>
+            <SelectTrigger className="w-full">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              {tabs.map(tab => (
+                <SelectItem key={tab.key} value={tab.key}>
+                  {tab.label} ({tab.count})
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
         </div>
       </div>
 

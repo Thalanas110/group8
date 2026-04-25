@@ -6,6 +6,7 @@ import { Modal, ConfirmDialog } from '../../components/shared/Modal';
 import { PaginatedTable } from '../../components/shared/PaginatedTable';
 import { User, UserRole } from '../../data/types';
 import { toast } from 'sonner';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../../components/ui/select';
 
 const roleConfig = {
   student: { label: 'Student', variant: 'gray' as const, icon: GraduationCap, bg: 'bg-gray-100', color: 'text-gray-600' },
@@ -181,12 +182,16 @@ export function AdminUsers() {
             </div>
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1.5">Role</label>
-              <select value={form.role} onChange={e => setForm(p => ({ ...p, role: e.target.value as UserRole }))}
-                className="w-full px-3 py-2.5 border border-gray-300 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white">
-                <option value="student">Student</option>
-                <option value="teacher">Teacher</option>
-                <option value="admin">Admin</option>
-              </select>
+              <Select value={form.role} onValueChange={value => setForm(p => ({ ...p, role: value as UserRole }))}>
+                <SelectTrigger className="w-full">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="student">Student</SelectItem>
+                  <SelectItem value="teacher">Teacher</SelectItem>
+                  <SelectItem value="admin">Admin</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
           </div>
           <div>

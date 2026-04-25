@@ -4,6 +4,7 @@ import { Modal, ConfirmDialog } from './Modal';
 import { accommodationApi, AccommodationRecord, AccommodationPayload } from '../../services/api';
 import { Exam, Class, User } from '../../data/types';
 import { toast } from 'sonner';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select';
 
 interface Props {
   exam: Exam | null;
@@ -250,16 +251,16 @@ export function ExamAccommodationsModal({ exam, classes, users, onClose }: Props
                 <p className="text-sm text-gray-400">All enrolled students already have accommodations.</p>
               ) : (
                 <div className="flex items-center gap-2">
-                  <select
-                    value={newStudentId}
-                    onChange={e => setNewStudentId(e.target.value)}
-                    className="flex-1 px-3 py-2.5 border border-gray-300 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-gray-900 bg-white"
-                  >
-                    <option value="">Select student…</option>
-                    {unenrolledStudents.map(s => (
-                      <option key={s.id} value={s.id}>{s.name}</option>
-                    ))}
-                  </select>
+                  <Select value={newStudentId} onValueChange={setNewStudentId}>
+                    <SelectTrigger className="flex-1">
+                      <SelectValue placeholder="Select student…" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {unenrolledStudents.map(s => (
+                        <SelectItem key={s.id} value={s.id}>{s.name}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
                   <button
                     onClick={openAdd}
                     className="flex items-center gap-1.5 px-3 py-2.5 bg-gray-900 text-white rounded-xl text-sm font-medium hover:bg-gray-700 transition-colors"

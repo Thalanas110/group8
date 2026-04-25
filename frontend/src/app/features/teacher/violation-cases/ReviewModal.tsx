@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
-import { ChevronDown, Save } from 'lucide-react';
+import { Save } from 'lucide-react';
 import { toast } from 'sonner';
 import { Modal } from '../../../components/shared/Modal';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../../../components/ui/select';
 import {
   violationCaseApi,
   type ViolationCase,
@@ -137,34 +138,30 @@ export function ReviewModal({
                 </span>
               )}
             </label>
-            <div className="relative">
-              <select
-                value={severity}
-                onChange={event => setSeverity(event.target.value as ViolationCaseSeverity)}
-                className="w-full appearance-none border border-gray-200 rounded-xl px-3 py-2.5 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-amber-400 pr-8"
-              >
+            <Select value={severity} onValueChange={value => setSeverity(value as ViolationCaseSeverity)}>
+              <SelectTrigger className="w-full">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
                 {(Object.keys(SEVERITY_META) as ViolationCaseSeverity[]).map(value => (
-                  <option key={value} value={value}>{SEVERITY_META[value].label}</option>
+                  <SelectItem key={value} value={value}>{SEVERITY_META[value].label}</SelectItem>
                 ))}
-              </select>
-              <ChevronDown className="pointer-events-none absolute right-2.5 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
-            </div>
+              </SelectContent>
+            </Select>
           </div>
 
           <div>
             <label className="block text-xs font-semibold text-gray-600 mb-1.5">Outcome</label>
-            <div className="relative">
-              <select
-                value={outcome}
-                onChange={event => setOutcome(event.target.value as ViolationCaseOutcome)}
-                className="w-full appearance-none border border-gray-200 rounded-xl px-3 py-2.5 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-amber-400 pr-8"
-              >
+            <Select value={outcome} onValueChange={value => setOutcome(value as ViolationCaseOutcome)}>
+              <SelectTrigger className="w-full">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
                 {(Object.keys(OUTCOME_META) as ViolationCaseOutcome[]).map(value => (
-                  <option key={value} value={value}>{OUTCOME_META[value].label}</option>
+                  <SelectItem key={value} value={value}>{OUTCOME_META[value].label}</SelectItem>
                 ))}
-              </select>
-              <ChevronDown className="pointer-events-none absolute right-2.5 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
-            </div>
+              </SelectContent>
+            </Select>
           </div>
         </div>
 

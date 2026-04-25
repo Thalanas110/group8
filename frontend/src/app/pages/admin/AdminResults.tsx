@@ -3,6 +3,7 @@ import { Search } from 'lucide-react';
 import { useApp } from '../../context/AppContext';
 import { Badge, getGradeBadge } from '../../components/shared/Badge';
 import { PaginatedTable } from '../../components/shared/PaginatedTable';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../../components/ui/select';
 
 export function AdminResults() {
   const { submissions, exams, users, classes, getUserById } = useApp();
@@ -59,11 +60,15 @@ export function AdminResults() {
             </button>
           ))}
         </div>
-        <select value={examFilter} onChange={e => setExamFilter(e.target.value)}
-          className="px-3 py-2 border border-gray-200 rounded-xl text-sm text-gray-600 bg-white focus:outline-none focus:ring-2 focus:ring-blue-500">
-          <option value="all">All Exams</option>
-          {exams.map(e => <option key={e.id} value={e.id}>{e.title}</option>)}
-        </select>
+        <Select value={examFilter} onValueChange={setExamFilter}>
+          <SelectTrigger className="w-52">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">All Exams</SelectItem>
+            {exams.map(e => <SelectItem key={e.id} value={e.id}>{e.title}</SelectItem>)}
+          </SelectContent>
+        </Select>
         <div className="relative flex-1 max-w-xs">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
           <input type="text" placeholder="Search by student or exam..." value={search} onChange={e => setSearch(e.target.value)}

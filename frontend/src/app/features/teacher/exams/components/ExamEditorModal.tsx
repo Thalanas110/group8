@@ -3,6 +3,7 @@ import { Modal } from '../../../../components/shared/Modal';
 import type { Class, Exam, ExamStatus, Question } from '../../../../data/types';
 import type { ExamFormData } from '../lib/exam-form';
 import { QuestionEditorCard } from './QuestionEditorCard';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../../../../components/ui/select';
 
 interface ExamEditorModalProps {
   isOpen: boolean;
@@ -73,28 +74,29 @@ export function ExamEditorModal({
             <div className="grid grid-cols-2 gap-3">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Class *</label>
-                <select
-                  value={form.classId}
-                  onChange={event => onChange(current => ({ ...current, classId: event.target.value }))}
-                  className="w-full px-3 py-2.5 border border-gray-300 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-gray-900 bg-white"
-                >
-                  <option value="">Select class...</option>
-                  {classes.map(item => (
-                    <option key={item.id} value={item.id}>{item.name}</option>
-                  ))}
-                </select>
+                <Select value={form.classId} onValueChange={value => onChange(current => ({ ...current, classId: value }))}>
+                  <SelectTrigger className="w-full">
+                    <SelectValue placeholder="Select class..." />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {classes.map(item => (
+                      <SelectItem key={item.id} value={item.id}>{item.name}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Status</label>
-                <select
-                  value={form.status}
-                  onChange={event => onChange(current => ({ ...current, status: event.target.value as ExamStatus }))}
-                  className="w-full px-3 py-2.5 border border-gray-300 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-gray-900 bg-white"
-                >
-                  <option value="draft">Draft</option>
-                  <option value="published">Published</option>
-                  <option value="completed">Completed</option>
-                </select>
+                <Select value={form.status} onValueChange={value => onChange(current => ({ ...current, status: value as ExamStatus }))}>
+                  <SelectTrigger className="w-full">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="draft">Draft</SelectItem>
+                    <SelectItem value="published">Published</SelectItem>
+                    <SelectItem value="completed">Completed</SelectItem>
+                  </SelectContent>
+                </Select>
               </div>
             </div>
             <div className="grid grid-cols-3 gap-3">
