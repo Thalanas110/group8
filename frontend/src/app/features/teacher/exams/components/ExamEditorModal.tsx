@@ -137,6 +137,7 @@ export function ExamEditorModal({
                 <input
                   type="datetime-local"
                   value={form.startDate}
+                  min={editingExam ? undefined : new Date(Date.now() - new Date().getTimezoneOffset() * 60000).toISOString().slice(0, 16)}
                   onChange={event => onChange(current => ({ ...current, startDate: event.target.value }))}
                   className="w-full px-3 py-2.5 border border-gray-300 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-gray-900"
                 />

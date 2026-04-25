@@ -44,7 +44,7 @@ const toTimestamp = (value: string): number | null => {
   return Number.isNaN(parsed) ? null : parsed;
 };
 
-export const validateExamForm = (form: ExamFormData): string | null => {
+export const validateExamForm = (form: ExamFormData, isNew = false): string | null => {
   if (!form.title.trim() || !form.description.trim() || !form.classId.trim()) {
     return 'title, description, and class are required.';
   }
@@ -69,6 +69,10 @@ export const validateExamForm = (form: ExamFormData): string | null => {
   const endTimestamp = toTimestamp(form.endDate);
   if (startTimestamp === null || endTimestamp === null) {
     return 'Start and end date/time are required.';
+  }
+
+  if (isNew && startTimestamp < Date.now()) {
+    return 'Start date/time cannot be in the past.';
   }
 
   if (endTimestamp <= startTimestamp) {

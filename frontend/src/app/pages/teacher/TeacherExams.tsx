@@ -60,7 +60,7 @@ export function TeacherExams() {
   };
 
   const handleSave = async () => {
-    const validationError = validateExamForm(form);
+    const validationError = validateExamForm(form, !editingExam);
     if (validationError) {
       toast.error(validationError);
       return;
