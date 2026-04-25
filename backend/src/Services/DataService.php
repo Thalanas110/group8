@@ -48,20 +48,11 @@ final class DataService
             $examIds = array_flip(array_map(static fn (array $exam): string => $exam['id'], $exams));
             $submissions = array_values(array_filter($submissions, static fn (array $submission): bool => isset($examIds[$submission['examId']])));
 
-            $allowedUserIds = [$teacherId => true];
-            foreach ($classes as $class) {
-                foreach ($class['studentIds'] as $studentId) {
-                    $allowedUserIds[$studentId] = true;
-                }
-            }
-
-            foreach ($users as $user) {
-                if (($user['role'] ?? '') !== 'student') {
-                    $allowedUserIds[$user['id']] = true;
-                }
-            }
-
-            $users = array_values(array_filter($users, static fn (array $user): bool => isset($allowedUserIds[$user['id']])));
+            // Include all students (so teachers can look up any student by email for enrollment)
+            // plus the teacher themselves. Other teachers/admins are excluded.
+            $users = array_values(array_filter($users, static fn (array $user): bool =>
+                ($user['role'] ?? '') === 'student' || (string) $user['id'] === $teacherId
+            ));
 
             return [
                 'users' => $users,

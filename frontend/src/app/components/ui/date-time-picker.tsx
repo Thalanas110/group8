@@ -28,7 +28,16 @@ export function DateTimePicker({
   const hasValidDate = parsedDate !== null && isValid(parsedDate);
 
   const dateStr = value.slice(0, 10);   // "YYYY-MM-DD"
-  const timeStr = value.slice(11, 16) || '00:00'; // "HH:mm"
+  const timeStr = value.slice(11, 16) || '12:00'; // "HH:mm" 24h
+
+  const [timeInput, setTimeInput] = React.useState(timeStr);
+  const [timeError, setTimeError] = React.useState(false);
+
+  // Keep local input in sync when external value changes (e.g. day pick resets time)
+  React.useEffect(() => {
+    setTimeInput(timeStr);
+    setTimeError(false);
+  }, [timeStr]);
 
   const minDate = min ? parse(min, "yyyy-MM-dd'T'HH:mm", new Date()) : undefined;
   const fromDate = minDate && isValid(minDate) ? minDate : undefined;
@@ -39,9 +48,15 @@ export function DateTimePicker({
     onChange(`${newDateStr}T${timeStr}`);
   };
 
-  const handleTimeChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (!dateStr) return;
-    onChange(`${dateStr}T${e.target.value}`);
+  const handleTimeBlur = () => {
+    const match = timeInput.trim().match(/^(\d{1,2}):(\d{2})$/);
+    if (!match) { setTimeError(true); return; }
+    const h = parseInt(match[1], 10);
+    const m = parseInt(match[2], 10);
+    if (h > 23 || m > 59) { setTimeError(true); return; }
+    setTimeError(false);
+    const normalized = `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}`;
+    if (dateStr) onChange(`${dateStr}T${normalized}`);
   };
 
   return (
@@ -74,17 +89,28 @@ export function DateTimePicker({
           initialFocus
         />
         <div className="border-t border-gray-100 px-4 py-3">
-          <label className="block text-[11px] font-semibold text-gray-500 uppercase tracking-wide mb-1.5">
-            Time
-          </label>
+          <p className="text-[11px] font-semibold text-gray-500 uppercase tracking-wide mb-2">Time <span className="normal-case font-normal">(24h, HH:MM)</span></p>
           <input
-            type="time"
-            value={timeStr}
-            onChange={handleTimeChange}
-            className="w-full px-3 py-2 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-gray-900 bg-white"
+            type="text"
+            value={timeInput}
+            placeholder="HH:MM"
+            onChange={e => { setTimeInput(e.target.value); setTimeError(false); }}
+            onBlur={handleTimeBlur}
+            className={cn(
+              'w-full px-3 py-2 border rounded-xl text-sm focus:outline-none focus:ring-2 bg-white transition-colors',
+              timeError
+                ? 'border-red-400 focus:ring-red-300'
+                : 'border-gray-200 focus:ring-gray-900',
+            )}
           />
+          {timeError && (
+            <p className="text-xs text-red-500 mt-1">Enter a valid time (00:00 – 23:59)</p>
+          )}
         </div>
       </PopoverContent>
     </Popover>
   );
 }
+
+
+
