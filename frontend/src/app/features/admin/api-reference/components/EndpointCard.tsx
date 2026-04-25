@@ -15,6 +15,7 @@ import { endpointKey, METHOD_STYLES } from '../lib/api-reference';
 import { CopyButton } from './CopyButton';
 import { MethodBadge } from './MethodBadge';
 import { VerificationBadge } from './VerificationBadge';
+import { TryItPanel } from './TryItPanel';
 
 export function EndpointCard({ endpoint, check }: { endpoint: EndpointDoc; check?: ApiDocsVerifyCheck }) {
   const [open, setOpen] = useState(false);
@@ -128,6 +129,10 @@ export function EndpointCard({ endpoint, check }: { endpoint: EndpointDoc; check
             <pre className="bg-gray-950 text-green-400 rounded-lg p-4 text-xs overflow-x-auto font-mono leading-relaxed">
               {JSON.stringify(endpoint.responseExample, null, 2)}
             </pre>
+          </div>
+
+          <div>
+            <TryItPanel endpoint={endpoint} />
           </div>
         </div>
       )}
