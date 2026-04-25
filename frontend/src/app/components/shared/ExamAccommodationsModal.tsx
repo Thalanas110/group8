@@ -5,6 +5,7 @@ import { accommodationApi, AccommodationRecord, AccommodationPayload } from '../
 import { Exam, Class, User } from '../../data/types';
 import { toast } from 'sonner';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select';
+import { DateTimePicker } from '../ui/date-time-picker';
 
 interface Props {
   exam: Exam | null;
@@ -388,21 +389,17 @@ function AccommodationForm({ exam, form, onChange }: FormProps) {
               </button>
             )}
           </div>
-          <input
-            type="datetime-local"
+          <DateTimePicker
             value={toInputDatetime(form.alternateStartAt)}
-            onChange={e => set('alternateStartAt', fromInputDatetime(e.target.value))}
-            className="w-full px-3 py-2 border border-gray-300 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-gray-900"
+            onChange={val => set('alternateStartAt', fromInputDatetime(val))}
           />
           <p className="mt-1 text-[11px] text-gray-400">Default: {new Date(exam.startDate).toLocaleString()}</p>
         </div>
         <div>
           <label className="block text-xs font-medium text-gray-700 mb-1">Alternate End</label>
-          <input
-            type="datetime-local"
+          <DateTimePicker
             value={toInputDatetime(form.alternateEndAt)}
-            onChange={e => set('alternateEndAt', fromInputDatetime(e.target.value))}
-            className="w-full px-3 py-2 border border-gray-300 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-gray-900"
+            onChange={val => set('alternateEndAt', fromInputDatetime(val))}
           />
           <p className="mt-1 text-[11px] text-gray-400">Default: {new Date(exam.endDate).toLocaleString()}</p>
         </div>

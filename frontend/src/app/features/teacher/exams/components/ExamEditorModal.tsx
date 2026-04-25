@@ -1,4 +1,5 @@
 import { PlusCircle } from 'lucide-react';
+import { DateTimePicker } from '../../../../components/ui/date-time-picker';
 import { Modal } from '../../../../components/shared/Modal';
 import type { Class, Exam, ExamStatus, Question } from '../../../../data/types';
 import type { ExamFormData } from '../lib/exam-form';
@@ -134,21 +135,18 @@ export function ExamEditorModal({
             <div className="grid grid-cols-2 gap-3">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Start Date & Time</label>
-                <input
-                  type="datetime-local"
+                <DateTimePicker
                   value={form.startDate}
                   min={editingExam ? undefined : new Date(Date.now() - new Date().getTimezoneOffset() * 60000).toISOString().slice(0, 16)}
-                  onChange={event => onChange(current => ({ ...current, startDate: event.target.value }))}
-                  className="w-full px-3 py-2.5 border border-gray-300 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-gray-900"
+                  onChange={val => onChange(current => ({ ...current, startDate: val }))}
                 />
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">End Date & Time</label>
-                <input
-                  type="datetime-local"
+                <DateTimePicker
                   value={form.endDate}
-                  onChange={event => onChange(current => ({ ...current, endDate: event.target.value }))}
-                  className="w-full px-3 py-2.5 border border-gray-300 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-gray-900"
+                  min={form.startDate || undefined}
+                  onChange={val => onChange(current => ({ ...current, endDate: val }))}
                 />
               </div>
             </div>

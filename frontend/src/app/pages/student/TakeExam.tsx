@@ -150,13 +150,12 @@ export function TakeExam() {
     if (!exam) { navigate('/student/exams'); return; }
   }, [exam, currentUser, navigate]);
 
-  // Track fullscreen state on the start screen so the button can gate on it
+  // Track fullscreen state for both start screen gating and the in-exam restore banner
   useEffect(() => {
-    if (started) return;
     const handleFsChange = () => setIsInFullscreen(!!document.fullscreenElement);
     document.addEventListener('fullscreenchange', handleFsChange);
     return () => document.removeEventListener('fullscreenchange', handleFsChange);
-  }, [started]);
+  }, []);
 
   useEffect(() => {
     answersRef.current = answers;
@@ -646,7 +645,10 @@ export function TakeExam() {
               Violation {tabSwitchCount} of {MAX_TAB_SWITCHES} &mdash; your exam will be auto-submitted on violation {MAX_TAB_SWITCHES}.
             </p>
             <button
-              onClick={() => setShowViolationWarning(false)}
+              onClick={() => {
+                setShowViolationWarning(false);
+                document.documentElement.requestFullscreen().catch(() => {});
+              }}
               className="w-full bg-gray-900 text-white py-2.5 rounded-xl text-sm font-semibold hover:bg-gray-700 transition-colors"
             >
               I Understand &mdash; Return to Exam
@@ -665,6 +667,22 @@ export function TakeExam() {
             <h2 className="text-xl font-bold text-gray-900 mb-2">Exam Auto-Submitted</h2>
             <p className="text-gray-600 text-sm">{autoSubmitReason}</p>
           </div>
+        </div>
+      )}
+
+      {/* Fullscreen restore banner (shown when student manages to leave fullscreen and the violation modal is not open) */}
+      {started && !isInFullscreen && !showViolationWarning && !autoSubmitReason && (
+        <div className="fixed top-0 inset-x-0 z-40 bg-amber-500 text-white px-4 py-2 flex items-center justify-between gap-4 shadow-md">
+          <div className="flex items-center gap-2 text-sm font-medium">
+            <AlertTriangle className="w-4 h-4 flex-shrink-0" />
+            You are no longer in full-screen mode. Return to full-screen to continue your exam.
+          </div>
+          <button
+            onClick={() => document.documentElement.requestFullscreen().catch(() => {})}
+            className="flex-shrink-0 bg-white text-amber-700 px-3 py-1 rounded-lg text-xs font-bold hover:bg-amber-50 transition-colors"
+          >
+            Restore Full Screen
+          </button>
         </div>
       )}
 
