@@ -15,7 +15,7 @@ type CacheEntry = {
 };
 
 export function useViolationCases(myExams: Exam[], classes: Class[], users: User[]) {
-  const [reviewMode, setReviewMode] = useState<ViolationReviewMode>('per_exam');
+  const [reviewMode, setReviewMode] = useState<ViolationReviewMode>('all');
   const [selectedExamId, setSelectedExamId] = useState<string>(myExams[0]?.id ?? '');
   const [selectedStudentId, setSelectedStudentId] = useState<string>('');
   const [selectedCourseId, setSelectedCourseId] = useState<string>('');

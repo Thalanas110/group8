@@ -26,6 +26,7 @@ import { AdminExams } from './pages/admin/AdminExams';
 import { AdminResults } from './pages/admin/AdminResults';
 import { AdminReports } from './pages/admin/AdminReports';
 import { AdminUsers } from './pages/admin/AdminUsers';
+import { AdminClasses } from './pages/admin/AdminClasses';
 import { AdminProfile } from './pages/admin/AdminProfile';
 import { AdminApiReference } from './pages/admin/AdminApiReference';
 import { AdminLogs } from './pages/admin/AdminLogs';
@@ -75,6 +76,7 @@ export function createAppRouter() {
         { index: true, Component: AdminDashboard },
         { path: 'users', Component: AdminUsers },
         { path: 'exams', Component: AdminExams },
+        { path: 'classes', Component: AdminClasses },
         { path: 'results', Component: AdminResults },
         { path: 'violations', Component: AdminViolations },
         { path: 'logs', Component: AdminLogs },

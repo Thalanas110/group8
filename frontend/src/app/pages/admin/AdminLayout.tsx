@@ -1,12 +1,13 @@
 import React, { useEffect } from 'react';
 import { useNavigate } from 'react-router';
-import { LayoutDashboard, Users, FileText, Clipboard, BarChart2, User, Code2, ScrollText, ShieldAlert, Archive } from 'lucide-react';
+import { LayoutDashboard, Users, FileText, Clipboard, BarChart2, User, Code2, ScrollText, ShieldAlert, Archive, BookOpen } from 'lucide-react';
 import { useApp } from '../../context/AppContext';
 import { DashboardLayout } from '../../components/shared/DashboardLayout';
 
 const navItems = [
   { path: '/admin', label: 'Dashboard', icon: LayoutDashboard },
   { path: '/admin/users', label: 'Users', icon: Users },
+  { path: '/admin/classes', label: 'Classes', icon: BookOpen },
   { path: '/admin/exams', label: 'Exams', icon: FileText },
   { path: '/admin/results', label: 'Results', icon: Clipboard },
   { path: '/admin/violations', label: 'Violations', icon: ShieldAlert },

@@ -66,6 +66,8 @@ export function violationTypeLabel(type: string): string {
       return 'Fullscreen Exit';
     case 'multiple_monitors':
       return 'Multiple Monitors';
+    case 'screen_overlay':
+      return 'Screen Overlay';
     default:
       return type;
   }

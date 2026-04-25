@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Plus, Users, Trash2, UserPlus, UserMinus, Search, Copy, BookOpen, Hash } from 'lucide-react';
+import { Plus, Users, Trash2, UserPlus, UserMinus, Search, Copy, BookOpen, Hash, Pencil } from 'lucide-react';
 import { useApp } from '../../context/AppContext';
 import { Modal, ConfirmDialog } from '../../components/shared/Modal';
 import { Badge } from '../../components/shared/Badge';
@@ -9,8 +9,10 @@ import { Class } from '../../data/types';
 export function TeacherClasses() {
   const { currentUser, classes, exams, users, addClass, updateClass, deleteClass, enrollStudent, removeStudentFromClass, getUserById } = useApp();
   const [showCreateModal, setShowCreateModal] = useState(false);
+  const [showEditModal, setShowEditModal] = useState(false);
   const [showStudentModal, setShowStudentModal] = useState(false);
   const [selectedClass, setSelectedClass] = useState<Class | null>(null);
+  const [editTarget, setEditTarget] = useState<Class | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<string | null>(null);
   const [removeTarget, setRemoveTarget] = useState<{ classId: string; studentId: string } | null>(null);
   const [search, setSearch] = useState('');
@@ -19,6 +21,7 @@ export function TeacherClasses() {
   const [enrollError, setEnrollError] = useState('');
 
   const [classForm, setClassForm] = useState({ name: '', subject: '', description: '', code: '' });
+  const [editForm, setEditForm] = useState({ name: '', subject: '', description: '', code: '' });
 
   if (!currentUser) return null;
 
@@ -61,6 +64,23 @@ export function TeacherClasses() {
   };
 
   const handleDeleteClass = (id: string) => { deleteClass(id); toast.success('Class deleted'); };
+
+  const openEditModal = (cls: Class) => {
+    setEditTarget(cls);
+    setEditForm({ name: cls.name, subject: cls.subject, description: cls.description ?? '', code: cls.code });
+    setShowEditModal(true);
+  };
+
+  const handleEditClass = () => {
+    if (!editTarget) return;
+    if (!editForm.name.trim() || !editForm.subject.trim()) { toast.error('Name and subject are required'); return; }
+    if (!editForm.code.trim()) { toast.error('Class code is required'); return; }
+    const codeConflict = classes.find(c => c.code.toUpperCase() === editForm.code.toUpperCase() && c.id !== editTarget.id);
+    if (codeConflict) { toast.error('Class code already in use'); return; }
+    updateClass(editTarget.id, { name: editForm.name.trim(), subject: editForm.subject.trim(), description: editForm.description.trim(), code: editForm.code.toUpperCase() });
+    toast.success('Class updated');
+    setShowEditModal(false);
+  };
 
   const copyCode = (code: string) => {
     navigator.clipboard.writeText(code).then(() => toast.success('Code copied!')).catch(() => toast.error('Failed to copy'));
@@ -151,6 +171,9 @@ export function TeacherClasses() {
                       className="flex-1 flex items-center justify-center gap-2 border border-gray-200 text-gray-600 py-2 rounded-xl text-sm font-medium hover:bg-gray-50">
                       <UserPlus className="w-4 h-4" /> Manage Students
                     </button>
+                    <button onClick={() => openEditModal(cls)} className="p-2 rounded-xl border border-gray-200 text-gray-500 hover:bg-gray-50" title="Edit class">
+                      <Pencil className="w-4 h-4" />
+                    </button>
                     <button onClick={() => setDeleteTarget(cls.id)} className="p-2 rounded-xl border border-red-200 text-red-500 hover:bg-red-50">
                       <Trash2 className="w-4 h-4" />
                     </button>
@@ -161,6 +184,45 @@ export function TeacherClasses() {
           })}
         </div>
       )}
+
+      {/* Edit Class Modal */}
+      <Modal isOpen={showEditModal} onClose={() => setShowEditModal(false)} title="Edit Class" size="md"
+        footer={
+          <>
+            <button onClick={() => setShowEditModal(false)} className="px-4 py-2 text-sm font-medium text-gray-700 border border-gray-300 rounded-xl hover:bg-gray-50">Cancel</button>
+            <button onClick={handleEditClass} className="px-4 py-2 text-sm font-medium text-white bg-gray-900 rounded-xl hover:bg-gray-700 transition-colors">Save Changes</button>
+          </>
+        }
+      >
+        <div className="space-y-4">
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1.5">Class Name *</label>
+            <input type="text" value={editForm.name} onChange={e => setEditForm(p => ({ ...p, name: e.target.value }))} placeholder="e.g. Mathematics 101"
+              className="w-full px-3 py-2.5 border border-gray-300 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1.5">Subject *</label>
+            <input type="text" value={editForm.subject} onChange={e => setEditForm(p => ({ ...p, subject: e.target.value }))} placeholder="e.g. Mathematics"
+              className="w-full px-3 py-2.5 border border-gray-300 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1.5">Class Code</label>
+            <div className="flex gap-2">
+              <input type="text" value={editForm.code} onChange={e => setEditForm(p => ({ ...p, code: e.target.value.toUpperCase() }))} maxLength={10}
+                className="flex-1 px-3 py-2.5 border border-gray-300 rounded-xl text-sm font-mono tracking-widest focus:outline-none focus:ring-2 focus:ring-blue-500 uppercase" />
+              <button type="button" onClick={() => setEditForm(p => ({ ...p, code: generateCode() }))} className="px-3 py-2.5 border border-gray-300 rounded-xl text-sm text-gray-600 hover:bg-gray-50">
+                Regenerate
+              </button>
+            </div>
+            <p className="text-xs text-gray-400 mt-1">Students use this code to join your class</p>
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1.5">Description</label>
+            <textarea rows={3} value={editForm.description} onChange={e => setEditForm(p => ({ ...p, description: e.target.value }))} placeholder="Brief class description..."
+              className="w-full px-3 py-2.5 border border-gray-300 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none" />
+          </div>
+        </div>
+      </Modal>
 
       {/* Create Class Modal */}
       <Modal isOpen={showCreateModal} onClose={() => setShowCreateModal(false)} title="Create New Class" size="md"

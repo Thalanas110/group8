@@ -1,6 +1,6 @@
 import { request } from './http/request';
 
-export type ViolationType = 'tab_switch' | 'window_blur' | 'right_click' | 'auto_submitted' | 'fullscreen_exit' | 'multiple_monitors';
+export type ViolationType = 'tab_switch' | 'window_blur' | 'right_click' | 'auto_submitted' | 'fullscreen_exit' | 'multiple_monitors' | 'screen_overlay';
 
 export interface ViolationRecord {
   id: number;

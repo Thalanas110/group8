@@ -195,6 +195,8 @@ export function TakeExam() {
           fullscreen_exit: 'You exited full-screen mode. You must remain in full-screen while taking the exam.',
           tab_switch: 'You left the exam window.',
           window_blur: 'You left the exam window.',
+          multiple_monitors: 'An external monitor was detected. You must use only a single display during the exam.',
+          screen_overlay: 'A screen overlay or floating window was detected. Close all overlays, screen-sharing tools, and call windows before continuing.',
         };
         setViolationWarningMessage(messages[type] ?? 'A security violation was detected.');
         setShowViolationWarning(true);
@@ -252,6 +254,41 @@ export function TakeExam() {
     document.addEventListener('keydown', handleKeyDown);
     document.addEventListener('fullscreenchange', handleFullscreenChange);
 
+    // Picture-in-Picture detection: fires when a media element on this page enters PiP
+    // (e.g. a student opens a video reference via PiP, or a call overlay requests PiP).
+    const handlePipEnter = () => handleViolation('screen_overlay');
+    document.addEventListener('enterpictureinpicture', handlePipEnter);
+
+    // Document Picture-in-Picture API (Chrome 116+): catches floating document windows
+    // created by apps like Google Meet when they call documentPictureInPicture.requestWindow().
+    const docPip = (window as Window & { documentPictureInPicture?: EventTarget }).documentPictureInPicture;
+    if (docPip) {
+      docPip.addEventListener('enter', handlePipEnter);
+    }
+
+    // Polling every 2 s: multi-monitor + PiP element state.
+    // Separate fired-flags so each re-plug / re-open counts as a fresh violation.
+    let monitorViolationFired = false;
+    let pipViolationFired = false;
+    const monitorPollInterval = setInterval(() => {
+      // Multi-monitor check (screen.isExtended — Window Management API, Chromium 100+)
+      const isExtended = (window.screen as Screen & { isExtended?: boolean }).isExtended;
+      if (isExtended === true && !monitorViolationFired) {
+        monitorViolationFired = true;
+        handleViolation('multiple_monitors');
+      } else if (isExtended !== true) {
+        monitorViolationFired = false;
+      }
+
+      // PiP element state check (belt-and-suspenders alongside the event listener)
+      if (document.pictureInPictureElement && !pipViolationFired) {
+        pipViolationFired = true;
+        handleViolation('screen_overlay');
+      } else if (!document.pictureInPictureElement) {
+        pipViolationFired = false;
+      }
+    }, 2_000);
+
     return () => {
       document.removeEventListener('visibilitychange', handleVisibilityChange);
       window.removeEventListener('blur', handleBlur);
@@ -259,6 +296,9 @@ export function TakeExam() {
       document.removeEventListener('contextmenu', handleContextMenu);
       document.removeEventListener('keydown', handleKeyDown);
       document.removeEventListener('fullscreenchange', handleFullscreenChange);
+      document.removeEventListener('enterpictureinpicture', handlePipEnter);
+      if (docPip) docPip.removeEventListener('enter', handlePipEnter);
+      clearInterval(monitorPollInterval);
     };
   }, [started, submitted]);
 
