@@ -175,12 +175,12 @@ export function Register() {
             <div>
               <label className="block text-[11px] font-semibold text-gray-700 mb-2 uppercase tracking-[0.14em]">Role</label>
               <Select value={form.role} onValueChange={value => update('role', value)}>
-                <SelectTrigger className="w-full">
+                <SelectTrigger className="w-full h-[46px] px-4 border border-gray-200 rounded-2xl bg-white text-sm text-gray-800 focus-visible:ring-2 focus-visible:ring-gray-900 focus-visible:border-transparent shadow-none">
                   <SelectValue />
                 </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="student">Student</SelectItem>
-                  <SelectItem value="teacher">Teacher</SelectItem>
+                <SelectContent className="bg-white border border-gray-200 rounded-xl shadow-lg">
+                  <SelectItem value="student" className="rounded-lg focus:bg-gray-100 focus:text-gray-900">Student</SelectItem>
+                  <SelectItem value="teacher" className="rounded-lg focus:bg-gray-100 focus:text-gray-900">Teacher</SelectItem>
                 </SelectContent>
               </Select>
             </div>
