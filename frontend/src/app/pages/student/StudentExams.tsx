@@ -18,11 +18,15 @@ export function StudentExams() {
   const navigate = useNavigate();
   const [search, setSearch] = useState('');
   const [filter, setFilter] = useState<ExamFilter>('all');
+  const [subjectFilter, setSubjectFilter] = useState<string>('__all__');
 
   if (!currentUser) return null;
 
   const myClassIds = new Set(classes.filter(c => c.studentIds.includes(currentUser.id)).map(c => c.id));
+  const myClasses = classes.filter(c => c.studentIds.includes(currentUser.id));
   const myExams = exams.filter(e => myClassIds.has(e.classId));
+
+  const subjects = Array.from(new Set(myClasses.map(c => c.subject))).sort();
 
   const getExamState = (examId: string) => {
     const sub = getStudentSubmission(examId, currentUser.id);
@@ -32,12 +36,15 @@ export function StudentExams() {
 
   const filtered = myExams.filter(e => {
     const matchSearch = e.title.toLowerCase().includes(search.toLowerCase());
+    const cls = getClassById(e.classId);
+    const matchSubject = subjectFilter === '__all__' || cls?.subject === subjectFilter;
     const state = getExamState(e.id);
-    if (filter === 'all') return matchSearch;
-    if (filter === 'available') return matchSearch && state === 'available' && e.status === 'published';
-    if (filter === 'submitted') return matchSearch && state === 'submitted';
-    if (filter === 'graded') return matchSearch && state === 'graded';
-    return matchSearch;
+    if (!matchSearch || !matchSubject) return false;
+    if (filter === 'all') return true;
+    if (filter === 'available') return state === 'available' && e.status === 'published';
+    if (filter === 'submitted') return state === 'submitted';
+    if (filter === 'graded') return state === 'graded';
+    return true;
   });
 
   const tabs: ExamFilterTab[] = [
@@ -91,13 +98,28 @@ export function StudentExams() {
         ))}
       </div>
 
-      {/* Search */}
-      <div className="relative max-w-sm">
-        <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
-        <input
-          type="text" placeholder="Search exams..." value={search} onChange={e => setSearch(e.target.value)}
-          className="pl-10 pr-4 py-2.5 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm w-full bg-white"
-        />
+      {/* Search + Subject filter */}
+      <div className="flex flex-wrap gap-2">
+        <div className="relative flex-1 min-w-[180px] max-w-sm">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+          <input
+            type="text" placeholder="Search exams..." value={search} onChange={e => setSearch(e.target.value)}
+            className="pl-10 pr-4 py-2.5 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm w-full bg-white"
+          />
+        </div>
+        {subjects.length > 0 && (
+          <Select value={subjectFilter} onValueChange={setSubjectFilter}>
+            <SelectTrigger className="w-44 py-2.5 border-gray-300 bg-white rounded-xl">
+              <SelectValue placeholder="All Subjects" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="__all__">All Subjects</SelectItem>
+              {subjects.map(s => (
+                <SelectItem key={s} value={s}>{s}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        )}
       </div>
 
       {/* Exam Grid */}

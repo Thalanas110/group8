@@ -21,6 +21,8 @@ export function Register() {
   const [loading, setLoading] = useState(false);
   const [agreedToTerms, setAgreedToTerms] = useState(false);
   const [showTerms, setShowTerms] = useState(false);
+  const [agreedToDataPrivacy, setAgreedToDataPrivacy] = useState(false);
+  const [showDataPrivacy, setShowDataPrivacy] = useState(false);
 
   useEffect(() => {
     if (currentUser) navigate(`/${currentUser.role}`, { replace: true });
@@ -41,6 +43,11 @@ export function Register() {
     setLoading(true);
     if (!agreedToTerms) {
       setError('You must agree to the Terms & Conditions to register.');
+      setLoading(false);
+      return;
+    }
+    if (!agreedToDataPrivacy) {
+      setError('You must agree to the Data Privacy Policy to register.');
       setLoading(false);
       return;
     }
@@ -108,6 +115,120 @@ export function Register() {
             <div className="px-6 py-4 border-t border-gray-100">
               <button
                 onClick={() => { setAgreedToTerms(true); setShowTerms(false); }}
+                className="w-full bg-gray-900 text-white py-2.5 rounded-xl text-sm font-semibold hover:bg-gray-700 transition-colors"
+              >
+                I Have Read and Agree
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ── Data Privacy Policy Modal ──────────────────────────────────── */}
+      {showDataPrivacy && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
+          <div className="bg-white rounded-2xl shadow-xl w-full max-w-lg max-h-[80vh] flex flex-col">
+            <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100">
+              <div className="flex items-center gap-2">
+                <ScrollText className="w-5 h-5 text-gray-700" />
+                <h2 className="text-base font-bold text-gray-900">Data Privacy Policy</h2>
+              </div>
+              <button onClick={() => setShowDataPrivacy(false)} className="p-1 rounded-lg hover:bg-gray-100 transition-colors">
+                <X className="w-4 h-4 text-gray-500" />
+              </button>
+            </div>
+            <div className="overflow-y-auto px-6 py-4 text-sm text-gray-700 space-y-4 leading-relaxed">
+              <p className="text-xs text-gray-400 uppercase tracking-wide font-semibold">Gordon College — General Privacy Notice</p>
+              <p className="text-xs text-gray-500">This is Gordon College's general statement on its data processing activities to notify data subjects of categories of personal data processed and the purpose and extent of processing.</p>
+
+              <section>
+                <h3 className="font-semibold text-gray-900 mb-1">1. Acts of Processing</h3>
+                <p>Gordon College processes Personal Data to perform its obligations, exercise its rights, and conduct its associated functions as an instrumentality of the government and as a higher education institution — pursuant to R.A. 7722, CHED Memorandum Order No. 32 S. 2006, and City Ordinance No. 07 S. 2018.</p>
+                <p className="mt-1">The Gordon College website and web applications use cookies to prevent security risks, recognize logged-in users, customize browsing experience, store authorization tokens, and permit social media sharing.</p>
+              </section>
+
+              <section>
+                <h3 className="font-semibold text-gray-900 mb-1">2. Personal Data Collected</h3>
+                <ul className="list-disc pl-4 space-y-0.5 text-sm">
+                  <li>Personal details: name, birth date, gender, civil status, affiliations</li>
+                  <li>Contact information: address, email, mobile and telephone numbers</li>
+                  <li>Academic information: grades, course, academic standing</li>
+                  <li>Employment information: government-issued numbers, position and functions</li>
+                  <li>Applicant information: academic background and previous employments</li>
+                  <li>Medical information: physical, psychiatric and psychological information</li>
+                </ul>
+              </section>
+
+              <section>
+                <h3 className="font-semibold text-gray-900 mb-1">3. Collection Method</h3>
+                <p>Personal Data is collected physically through printed forms and documents, and electronically through electronic forms, email, or direct input by the data subject.</p>
+              </section>
+
+              <section>
+                <h3 className="font-semibold text-gray-900 mb-1">4. Timing of Collection</h3>
+                <p>Personal Data is generally collected at the onset of the relationship with stakeholders — upon application or before commencement of engagement — and also when specific actions or decisions are undertaken.</p>
+              </section>
+
+              <section>
+                <h3 className="font-semibold text-gray-900 mb-1">5. Purpose of Collection</h3>
+                <ul className="list-disc pl-4 space-y-0.5 text-sm">
+                  <li>To perform Gordon College's obligations as a government instrumentality and HEI</li>
+                  <li>To pursue GC's mandates under existing laws and regulations</li>
+                  <li>To manage and administer internal and external affairs</li>
+                  <li>Compliance with legal, regulatory, administrative, or judicial requirements</li>
+                  <li>Purpose specific to the stakeholder per the Gordon College Data Privacy Manual</li>
+                </ul>
+              </section>
+
+              <section>
+                <h3 className="font-semibold text-gray-900 mb-1">6. Storage &amp; Transfer</h3>
+                <p>Personal Data is stored in physical and electronic systems managed by Gordon College units. Transmission and transfer are conducted in accordance with Chapter III of the Data Privacy Act of 2012 and Rule V of its IRR.</p>
+              </section>
+
+              <section>
+                <h3 className="font-semibold text-gray-900 mb-1">7. Method of Use</h3>
+                <p>Personal Data is used proportionately as necessary for GC's legitimate purposes under the Data Privacy Act of 2012, NPC issuances, and National Archives of the Philippines Act of 2007.</p>
+              </section>
+
+              <section>
+                <h3 className="font-semibold text-gray-900 mb-1">8. Retention</h3>
+                <p>Data is retained in accordance with the Gordon College Records Management Policy. In the absence of an applicable rule, retention follows practices of government bodies with analogous functions.</p>
+              </section>
+
+              <section>
+                <h3 className="font-semibold text-gray-900 mb-1">9. Your Rights</h3>
+                <ul className="list-disc pl-4 space-y-0.5 text-sm">
+                  <li>Right to be informed</li>
+                  <li>Right to object (subject to GC's possible failure to conduct academic/admin functions)</li>
+                  <li>Right to access</li>
+                  <li>Right to rectification</li>
+                  <li>Right to erasure or blocking of non-public Personal Data</li>
+                  <li>Right to damages (subordinate to GC's non-liability for incidental damages from mandate pursuance)</li>
+                </ul>
+              </section>
+
+              <section>
+                <h3 className="font-semibold text-gray-900 mb-1">10. Your Responsibilities</h3>
+                <ul className="list-disc pl-4 space-y-0.5 text-sm">
+                  <li>Respect the data privacy rights of others</li>
+                  <li>Report any suspected Security Incident or Personal Data Breach to the GC Data Protection Office</li>
+                  <li>Provide true and accurate Personal Data; obtain consent before submitting another person's data</li>
+                  <li>Do not disclose non-public confidential or personal information obtained from GC</li>
+                  <li>Abide by GC policies on data privacy, information security, records management, and ethical conduct</li>
+                </ul>
+              </section>
+
+              <section>
+                <h3 className="font-semibold text-gray-900 mb-1">11. Inquiries</h3>
+                <p>Data Privacy Office — Olongapo City Sports Complex, Donor St., East Tapinac, Olongapo City 2200</p>
+                <p>Phone: (047) 222-4080 · Email: dpo@gordoncollege.edu.ph</p>
+              </section>
+
+              <p className="text-xs text-gray-400 pt-1">Full policy: <a href="https://gordoncollegeccs.edu.ph/datapolicy/" target="_blank" rel="noopener noreferrer" className="underline hover:text-gray-600">gordoncollegeccs.edu.ph/datapolicy</a></p>
+            </div>
+            <div className="px-6 py-4 border-t border-gray-100">
+              <button
+                onClick={() => { setAgreedToDataPrivacy(true); setShowDataPrivacy(false); }}
                 className="w-full bg-gray-900 text-white py-2.5 rounded-xl text-sm font-semibold hover:bg-gray-700 transition-colors"
               >
                 I Have Read and Agree
@@ -250,9 +371,29 @@ export function Register() {
             </span>
           </label>
 
+          {/* Data Privacy Policy checkbox */}
+          <label className="flex items-start gap-3 cursor-pointer select-none group">
+            <input
+              type="checkbox"
+              checked={agreedToDataPrivacy}
+              onChange={e => setAgreedToDataPrivacy(e.target.checked)}
+              className="mt-0.5 w-4 h-4 rounded border-gray-300 accent-gray-900 flex-shrink-0 cursor-pointer"
+            />
+            <span className="text-sm text-gray-600 leading-relaxed group-hover:text-gray-800 transition-colors">
+              I have read and agree to the{' '}
+              <button
+                type="button"
+                onClick={() => setShowDataPrivacy(true)}
+                className="text-gray-900 font-semibold underline underline-offset-2 hover:text-gray-600 transition-colors"
+              >
+                Gordon College Data Privacy Policy
+              </button>
+            </span>
+          </label>
+
           <button
             type="submit"
-            disabled={loading || !agreedToTerms}
+            disabled={loading || !agreedToTerms || !agreedToDataPrivacy}
             className="w-full bg-gray-900 text-white py-3 px-4 rounded-2xl disabled:opacity-60 disabled:cursor-not-allowed flex items-center justify-center gap-2 text-sm font-semibold transition-colors mt-3"
           >
             {loading ? (
