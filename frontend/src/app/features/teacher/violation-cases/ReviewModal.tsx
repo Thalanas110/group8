@@ -42,7 +42,9 @@ export function ReviewModal({
   const [notes, setNotes] = useState(existingCase?.teacherNotes ?? '');
   const [saving, setSaving] = useState(false);
 
-  const studentViolations = violations.filter(violation => violation.student_id === studentId);
+  const studentViolations = violations.filter(
+    violation => violation.exam_id === examId && violation.student_id === studentId,
+  );
 
   const handleSave = async () => {
     setSaving(true);
