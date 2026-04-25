@@ -6,6 +6,7 @@ import {
   FileJson,
   FileText,
   Printer,
+  Search,
   Upload,
   Users,
   type LucideIcon,
@@ -279,6 +280,10 @@ export function ImportExportTools({ audience }: ImportExportToolsProps) {
   const [selectedClassId, setSelectedClassId] = useState('');
   const [selectedExamId, setSelectedExamId] = useState('');
   const [selectedSubmissionId, setSelectedSubmissionId] = useState('');
+  const [resultSearchQuery, setResultSearchQuery] = useState('');
+  const [resultStudentId, setResultStudentId] = useState('all');
+  const [resultCourseId, setResultCourseId] = useState('all');
+  const [resultExamId, setResultExamId] = useState('all');
   const [analyticsKind, setAnalyticsKind] = useState<AnalyticsExportKind>('submissions');
   const [printTargetId, setPrintTargetId] = useState<string | null>(null);
   const [busyImport, setBusyImport] = useState<'roster' | 'exam' | null>(null);
@@ -304,9 +309,93 @@ export function ImportExportTools({ audience }: ImportExportToolsProps) {
     visibleSubmissions.filter(item => item.status === 'graded')
   ), [visibleSubmissions]);
 
+  const resultRows = useMemo(() => (
+    gradedSubmissions
+      .map(submission => {
+        const exam = exams.find(item => item.id === submission.examId);
+        const examClass = exam ? classes.find(item => item.id === exam.classId) : undefined;
+        const student = getUserById(submission.studentId);
+        const gradeLabel = submission.grade || `${submission.percentage ?? 0}%`;
+        return {
+          submission,
+          exam,
+          examClass,
+          student,
+          gradeLabel,
+          searchText: [
+            student?.name || '',
+            student?.email || '',
+            exam?.title || '',
+            examClass?.name || '',
+            examClass?.subject || '',
+            gradeLabel,
+          ].join(' ').toLowerCase(),
+        };
+      })
+      .sort((left, right) => {
+        const studentCompare = (left.student?.name || '').localeCompare(right.student?.name || '');
+        if (studentCompare !== 0) return studentCompare;
+        return (left.exam?.title || '').localeCompare(right.exam?.title || '');
+      })
+  ), [classes, exams, getUserById, gradedSubmissions]);
+
+  const resultStudentOptions = useMemo(() => {
+    const map = new Map<string, string>();
+    for (const row of resultRows) {
+      if (!map.has(row.submission.studentId)) {
+        map.set(row.submission.studentId, row.student?.name || 'Unknown student');
+      }
+    }
+
+    return Array.from(map.entries())
+      .map(([id, label]) => ({ id, label }))
+      .sort((left, right) => left.label.localeCompare(right.label));
+  }, [resultRows]);
+
+  const resultCourseOptions = useMemo(() => {
+    const map = new Map<string, string>();
+    for (const row of resultRows) {
+      if (!row.examClass?.id) continue;
+      if (!map.has(row.examClass.id)) {
+        map.set(row.examClass.id, row.examClass.name);
+      }
+    }
+
+    return Array.from(map.entries())
+      .map(([id, label]) => ({ id, label }))
+      .sort((left, right) => left.label.localeCompare(right.label));
+  }, [resultRows]);
+
+  const resultExamOptions = useMemo(() => {
+    const map = new Map<string, string>();
+    for (const row of resultRows) {
+      if (!row.exam?.id) continue;
+      if (resultCourseId !== 'all' && row.exam.classId !== resultCourseId) continue;
+      if (!map.has(row.exam.id)) {
+        map.set(row.exam.id, row.exam.title);
+      }
+    }
+
+    return Array.from(map.entries())
+      .map(([id, label]) => ({ id, label }))
+      .sort((left, right) => left.label.localeCompare(right.label));
+  }, [resultCourseId, resultRows]);
+
+  const normalizedResultSearch = resultSearchQuery.trim().toLowerCase();
+
+  const filteredResultRows = useMemo(() => (
+    resultRows.filter(row => {
+      if (resultStudentId !== 'all' && row.submission.studentId !== resultStudentId) return false;
+      if (resultCourseId !== 'all' && row.examClass?.id !== resultCourseId) return false;
+      if (resultExamId !== 'all' && row.exam?.id !== resultExamId) return false;
+      if (normalizedResultSearch && !row.searchText.includes(normalizedResultSearch)) return false;
+      return true;
+    })
+  ), [normalizedResultSearch, resultCourseId, resultExamId, resultRows, resultStudentId]);
+
   const selectedClass = visibleClasses.find(item => item.id === selectedClassId);
   const selectedExam = visibleExams.find(item => item.id === selectedExamId);
-  const selectedSubmission = gradedSubmissions.find(item => item.id === selectedSubmissionId);
+  const selectedResultRow = filteredResultRows.find(item => item.submission.id === selectedSubmissionId);
   const printSubmission = printTargetId ? gradedSubmissions.find(item => item.id === printTargetId) : undefined;
   const printExam = printSubmission ? exams.find(item => item.id === printSubmission.examId) : undefined;
   const printClass = printExam ? classes.find(item => item.id === printExam.classId) : undefined;
@@ -328,11 +417,33 @@ export function ImportExportTools({ audience }: ImportExportToolsProps) {
   }, [selectedExamId, visibleExams]);
 
   useEffect(() => {
-    if (!selectedSubmissionId && gradedSubmissions[0]) setSelectedSubmissionId(gradedSubmissions[0].id);
-    if (selectedSubmissionId && !gradedSubmissions.some(item => item.id === selectedSubmissionId)) {
-      setSelectedSubmissionId(gradedSubmissions[0]?.id || '');
+    if (resultStudentId !== 'all' && !resultStudentOptions.some(option => option.id === resultStudentId)) {
+      setResultStudentId('all');
     }
-  }, [gradedSubmissions, selectedSubmissionId]);
+  }, [resultStudentId, resultStudentOptions]);
+
+  useEffect(() => {
+    if (resultCourseId !== 'all' && !resultCourseOptions.some(option => option.id === resultCourseId)) {
+      setResultCourseId('all');
+    }
+  }, [resultCourseId, resultCourseOptions]);
+
+  useEffect(() => {
+    if (resultExamId !== 'all' && !resultExamOptions.some(option => option.id === resultExamId)) {
+      setResultExamId('all');
+    }
+  }, [resultExamId, resultExamOptions]);
+
+  useEffect(() => {
+    if (filteredResultRows.length === 0) {
+      if (selectedSubmissionId) setSelectedSubmissionId('');
+      return;
+    }
+
+    if (!selectedSubmissionId || !filteredResultRows.some(item => item.submission.id === selectedSubmissionId)) {
+      setSelectedSubmissionId(filteredResultRows[0].submission.id);
+    }
+  }, [filteredResultRows, selectedSubmissionId]);
 
   useEffect(() => {
     if (!printTargetId) return undefined;
@@ -716,40 +827,107 @@ export function ImportExportTools({ audience }: ImportExportToolsProps) {
         </ToolCard>
 
         <ToolCard icon={Printer} title="PDF Result Slips">
+          <div className="space-y-2">
+            <FieldLabel>Search & Filters</FieldLabel>
+            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-2">
+              <div className="relative">
+                <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
+                <input
+                  value={resultSearchQuery}
+                  onChange={event => setResultSearchQuery(event.target.value)}
+                  placeholder="Search student, course, exam, grade..."
+                  className="w-full rounded-xl border border-gray-300 bg-white py-2.5 pr-3 pl-9 text-sm"
+                />
+              </div>
+              <select
+                value={resultStudentId}
+                onChange={event => setResultStudentId(event.target.value)}
+                className="w-full px-3 py-2.5 border border-gray-300 rounded-xl text-sm bg-white"
+              >
+                <option value="all">All students</option>
+                {resultStudentOptions.map(option => (
+                  <option key={option.id} value={option.id}>{option.label}</option>
+                ))}
+              </select>
+              <select
+                value={resultCourseId}
+                onChange={event => setResultCourseId(event.target.value)}
+                className="w-full px-3 py-2.5 border border-gray-300 rounded-xl text-sm bg-white"
+              >
+                <option value="all">All courses</option>
+                {resultCourseOptions.map(option => (
+                  <option key={option.id} value={option.id}>{option.label}</option>
+                ))}
+              </select>
+              <select
+                value={resultExamId}
+                onChange={event => setResultExamId(event.target.value)}
+                className="w-full px-3 py-2.5 border border-gray-300 rounded-xl text-sm bg-white"
+              >
+                <option value="all">All exams</option>
+                {resultExamOptions.map(option => (
+                  <option key={option.id} value={option.id}>{option.label}</option>
+                ))}
+              </select>
+            </div>
+            <div className="flex flex-wrap items-center justify-between gap-2 text-xs text-gray-500">
+              <span>
+                {filteredResultRows.length} matching result{filteredResultRows.length !== 1 ? 's' : ''}
+              </span>
+              {resultSearchQuery && (
+                <button
+                  type="button"
+                  onClick={() => setResultSearchQuery('')}
+                  className="rounded-lg border border-gray-200 px-2.5 py-1 text-[11px] font-semibold uppercase tracking-[0.12em] text-gray-500 hover:bg-gray-50"
+                >
+                  Clear search
+                </button>
+              )}
+            </div>
+          </div>
+
           <div>
             <FieldLabel>Result</FieldLabel>
             <select
               value={selectedSubmissionId}
               onChange={event => setSelectedSubmissionId(event.target.value)}
               className="w-full px-3 py-2.5 border border-gray-300 rounded-xl text-sm bg-white"
+              disabled={filteredResultRows.length === 0}
             >
-              {gradedSubmissions.map(item => {
-                const exam = exams.find(candidate => candidate.id === item.examId);
-                const student = getUserById(item.studentId);
-                return (
-                  <option key={item.id} value={item.id}>
-                    {student?.name || 'Unknown'} - {exam?.title || 'Exam'} - {item.grade || `${item.percentage}%`}
-                  </option>
-                );
-              })}
+              {filteredResultRows.length === 0 && (
+                <option value="">No matching graded results</option>
+              )}
+              {filteredResultRows.map(row => (
+                <option key={row.submission.id} value={row.submission.id}>
+                  {row.student?.name || 'Unknown'} - {row.exam?.title || 'Exam'} - {row.examClass?.name || 'Class'} - {row.gradeLabel}
+                </option>
+              ))}
             </select>
           </div>
 
-          {selectedSubmission && (
+          {selectedResultRow && (
             <div className="flex items-center gap-3 rounded-xl bg-gray-50 border border-gray-100 p-3">
               <div className="w-10 h-10 rounded-xl bg-gray-900 flex items-center justify-center text-xs font-semibold text-white">
-                {initials(getUserById(selectedSubmission.studentId)?.name)}
+                {initials(selectedResultRow.student?.name)}
               </div>
               <div className="min-w-0 flex-1">
-                <div className="text-sm font-semibold text-gray-900 truncate">{getUserById(selectedSubmission.studentId)?.name || 'Unknown student'}</div>
-                <div className="text-xs text-gray-500 truncate">{exams.find(item => item.id === selectedSubmission.examId)?.title || 'Unknown exam'}</div>
+                <div className="text-sm font-semibold text-gray-900 truncate">{selectedResultRow.student?.name || 'Unknown student'}</div>
+                <div className="text-xs text-gray-500 truncate">
+                  {selectedResultRow.exam?.title || 'Unknown exam'} - {selectedResultRow.examClass?.name || 'Unknown course'}
+                </div>
               </div>
-              <Badge variant={getGradeBadge(selectedSubmission.grade)}>{selectedSubmission.grade || `${selectedSubmission.percentage}%`}</Badge>
+              <Badge variant={getGradeBadge(selectedResultRow.submission.grade)}>
+                {selectedResultRow.gradeLabel}
+              </Badge>
             </div>
           )}
 
           <div className="flex flex-wrap gap-2">
-            <ActionButton icon={Printer} onClick={() => selectedSubmission && setPrintTargetId(selectedSubmission.id)} disabled={!selectedSubmission}>
+            <ActionButton
+              icon={Printer}
+              onClick={() => selectedResultRow && setPrintTargetId(selectedResultRow.submission.id)}
+              disabled={!selectedResultRow}
+            >
               Print Slip
             </ActionButton>
           </div>

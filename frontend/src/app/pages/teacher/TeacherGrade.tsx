@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { useApp } from '../../context/AppContext';
 import { toast } from 'sonner';
 import type { Exam, Submission } from '../../data/types';
@@ -10,7 +10,8 @@ import { SubmissionsTable } from '../../features/teacher/grade/components/Submis
 import { useSubmissionViolations } from '../../features/teacher/grade/hooks/useSubmissionViolations';
 
 export function TeacherGrade() {
-  const { currentUser, exams, submissions, getUserById, gradeSubmission } = useApp();
+  const { currentUser, exams, submissions, classes, getUserById, gradeSubmission } = useApp();
+  const [selectedCourse, setSelectedCourse] = useState<string | null>(null);
   const [selectedExam, setSelectedExam] = useState<string | null>(null);
   const [selectedSub, setSelectedSub] = useState<string | null>(null);
   const [gradeInputs, setGradeInputs] = useState<Record<string, number>>({});
@@ -25,11 +26,15 @@ export function TeacherGrade() {
     closeViolations,
   } = useSubmissionViolations();
 
-  if (!currentUser) return null;
-
-  const myExams = exams.filter(exam => exam.teacherId === currentUser.id);
+  const myExams = useMemo(
+    () => (currentUser ? exams.filter(exam => exam.teacherId === currentUser.id) : []),
+    [currentUser?.id, exams],
+  );
   const myExamIds = new Set(myExams.map(exam => exam.id));
   const allSubs = submissions.filter(submission => myExamIds.has(submission.examId));
+  const courseExamIds = selectedCourse
+    ? new Set(myExams.filter(exam => exam.classId === selectedCourse).map(exam => exam.id))
+    : null;
 
   const filteredSubs = allSubs.filter(submission => {
     if (filter === 'pending') return submission.status === 'submitted';
@@ -37,10 +42,31 @@ export function TeacherGrade() {
     return true;
   });
 
-  const examSubs = selectedExam ? filteredSubs.filter(submission => submission.examId === selectedExam) : filteredSubs;
+  const scopedSubs = courseExamIds
+    ? filteredSubs.filter(submission => courseExamIds.has(submission.examId))
+    : filteredSubs;
+  const examSubs = selectedExam ? scopedSubs.filter(submission => submission.examId === selectedExam) : scopedSubs;
   const subToGrade = selectedSub ? allSubs.find(submission => submission.id === selectedSub) : null;
   const subExam = subToGrade ? myExams.find(exam => exam.id === subToGrade.examId) : null;
   const student = subToGrade ? getUserById(subToGrade.studentId) : null;
+
+  useEffect(() => {
+    if (selectedCourse && !myExams.some(exam => exam.classId === selectedCourse)) {
+      setSelectedCourse(null);
+    }
+  }, [myExams, selectedCourse]);
+
+  useEffect(() => {
+    if (!selectedExam) return;
+
+    const stillValid = myExams.some(exam => (
+      exam.id === selectedExam && (!selectedCourse || exam.classId === selectedCourse)
+    ));
+
+    if (!stillValid) {
+      setSelectedExam(null);
+    }
+  }, [myExams, selectedCourse, selectedExam]);
 
   const openGrade = (submission: Submission, exam: Exam) => {
     setSelectedSub(submission.id);
@@ -78,7 +104,10 @@ export function TeacherGrade() {
   };
 
   const pendingCount = allSubs.filter(submission => submission.status === 'submitted').length;
+  const scopedPendingCount = scopedSubs.filter(submission => submission.status === 'submitted').length;
   const totalScore = Object.values(gradeInputs).reduce((sum, value) => sum + (value || 0), 0);
+
+  if (!currentUser) return null;
 
   return (
     <>
@@ -111,13 +140,20 @@ export function TeacherGrade() {
 
           <GradeFilterTabs filter={filter} pendingCount={pendingCount} onChange={setFilter} />
 
-          <ExamSelectionChips exams={myExams} selectedExam={selectedExam} onToggleExam={setSelectedExam} />
+          <ExamSelectionChips
+            exams={myExams}
+            classes={classes}
+            selectedCourse={selectedCourse}
+            selectedExam={selectedExam}
+            onToggleCourse={setSelectedCourse}
+            onToggleExam={setSelectedExam}
+          />
 
           <SubmissionsTable
             submissions={examSubs}
             exams={myExams}
             getUserById={getUserById}
-            pendingCount={pendingCount}
+            pendingCount={scopedPendingCount}
             filter={filter}
             onOpenViolations={openViolations}
             onOpenGrade={openGrade}
