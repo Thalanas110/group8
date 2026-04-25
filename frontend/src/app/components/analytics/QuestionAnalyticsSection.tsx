@@ -132,24 +132,30 @@ export function QuestionAnalyticsSection({ audienceLabel }: QuestionAnalyticsSec
 
   return (
     <div className="space-y-6">
-      <section className="relative overflow-hidden rounded-[2rem] border border-gray-200 bg-[radial-gradient(circle_at_top_left,_rgba(245,158,11,0.16),_transparent_34%),radial-gradient(circle_at_top_right,_rgba(17,24,39,0.12),_transparent_28%),linear-gradient(135deg,_#fffdf7,_#ffffff_55%,_#f7f7f5)] p-6 shadow-[0_28px_64px_-40px_rgba(47,31,17,0.6)]">
-        <div className="absolute right-4 top-4 rounded-full border border-white/60 bg-white/70 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.24em] text-gray-500 backdrop-blur">
-          Future-aware analytics
-        </div>
-        <div className="max-w-3xl">
-          <div className="mb-4 flex items-center gap-3">
-            <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-gray-900 text-white shadow-[0_16px_34px_-20px_rgba(17,24,39,0.9)]">
-              <Sparkles className="h-5 w-5" />
+      <section className="relative overflow-hidden rounded-[2rem] border border-gray-200 bg-[radial-gradient(circle_at_top_left,_rgba(245,158,11,0.16),_transparent_34%),radial-gradient(circle_at_top_right,_rgba(17,24,39,0.12),_transparent_28%),linear-gradient(135deg,_#fffdf7,_#ffffff_55%,_#f7f7f5)] px-6 py-5 shadow-[0_28px_64px_-40px_rgba(47,31,17,0.6)]">
+        <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:gap-6">
+          {/* Header */}
+          <div className="flex items-center gap-3 lg:shrink-0">
+            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-gray-900 text-white shadow-[0_16px_34px_-20px_rgba(17,24,39,0.9)]">
+              <Sparkles className="h-4.5 w-4.5" />
             </div>
             <div>
-              <h2 className="text-xl font-semibold tracking-tight text-gray-900">Question Intelligence</h2>
-              <p className="mt-1 text-sm text-gray-600">
-                {audienceLabel} view of question difficulty, wrong-answer patterns, pacing, and weak class topics.
+              <div className="flex items-center gap-2">
+                <h2 className="text-base font-semibold tracking-tight text-gray-900">Question Intelligence</h2>
+                <span className="rounded-full border border-white/60 bg-white/70 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-[0.22em] text-gray-500 backdrop-blur">
+                  Future-aware
+                </span>
+              </div>
+              <p className="mt-0.5 max-w-xs text-xs text-gray-500">
+                {audienceLabel} view of difficulty, wrong-answer patterns, pacing, and weak topics.
               </p>
             </div>
           </div>
 
-          <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
+          <div className="hidden h-10 w-px shrink-0 bg-black/10 lg:block" />
+
+          {/* Stats */}
+          <div className="grid grid-cols-2 gap-2 sm:grid-cols-4 lg:flex-1">
             {[
               {
                 label: 'Telemetry Coverage',
@@ -160,29 +166,29 @@ export function QuestionAnalyticsSection({ audienceLabel }: QuestionAnalyticsSec
               {
                 label: 'Topic Coverage',
                 value: `${topicCoveragePct}%`,
-                note: `${report.coverage.topicTaggedQuestions}/${report.coverage.totalQuestions} questions tagged`,
+                note: `${report.coverage.topicTaggedQuestions}/${report.coverage.totalQuestions} tagged`,
                 icon: BookOpen,
               },
               {
                 label: 'Questions in Scope',
                 value: filteredQuestions.length,
-                note: 'After current filters',
+                note: 'After filters',
                 icon: BarChart2,
               },
               {
                 label: 'Classes in Scope',
                 value: new Set(filteredQuestions.map(question => question.classId)).size,
-                note: 'Across scoped analytics',
+                note: 'Scoped analytics',
                 icon: Users,
               },
             ].map(card => (
-              <div key={card.label} className="rounded-2xl border border-white/70 bg-white/80 p-4 backdrop-blur">
-                <div className="mb-3 flex h-10 w-10 items-center justify-center rounded-2xl bg-gray-900 text-white">
-                  <card.icon className="h-4.5 w-4.5" />
+              <div key={card.label} className="rounded-xl border border-white/70 bg-white/80 px-3 py-2.5 backdrop-blur">
+                <div className="flex items-center gap-1.5">
+                  <card.icon className="h-3.5 w-3.5 shrink-0 text-gray-500" />
+                  <span className="text-lg font-semibold text-gray-900">{card.value}</span>
                 </div>
-                <div className="text-2xl font-semibold text-gray-900">{card.value}</div>
-                <div className="mt-1 text-xs font-semibold uppercase tracking-[0.18em] text-gray-400">{card.label}</div>
-                <div className="mt-2 text-sm text-gray-500">{card.note}</div>
+                <div className="mt-0.5 text-[10px] font-semibold uppercase tracking-[0.16em] text-gray-400">{card.label}</div>
+                <div className="mt-0.5 text-[11px] text-gray-500">{card.note}</div>
               </div>
             ))}
           </div>
