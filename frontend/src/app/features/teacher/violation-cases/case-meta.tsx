@@ -14,6 +14,15 @@ import type {
 
 export const MAX_TAB_SWITCHES = 3;
 
+export type ViolationReviewMode = 'all' | 'per_exam' | 'per_student' | 'per_course';
+
+export const VIOLATION_REVIEW_MODE_OPTIONS: Array<{ value: ViolationReviewMode; label: string }> = [
+  { value: 'all', label: 'All Violations' },
+  { value: 'per_exam', label: 'Per Exam' },
+  { value: 'per_student', label: 'Per Student' },
+  { value: 'per_course', label: 'Per Course' },
+];
+
 export function suggestSeverity(violations: ViolationRecord[]): ViolationCaseSeverity {
   const hasAutoSubmit = violations.some(violation => violation.violation_type === 'auto_submitted');
   if (hasAutoSubmit || violations.length >= MAX_TAB_SWITCHES + 1) return 'critical';
@@ -63,6 +72,11 @@ export function violationTypeLabel(type: string): string {
 }
 
 export interface ViolationCaseRow {
+  rowKey: string;
+  examId: string;
+  examTitle: string;
+  classId: string;
+  className: string;
   studentId: string;
   studentName: string;
   studentEmail: string;

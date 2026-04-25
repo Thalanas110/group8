@@ -1,23 +1,37 @@
 import React from 'react';
 import { Badge } from '../../../components/shared/Badge';
 import { PaginatedTable } from '../../../components/shared/PaginatedTable';
-import { OUTCOME_META, SEVERITY_META, type ViolationCaseRow, MAX_TAB_SWITCHES } from './case-meta';
+import {
+  OUTCOME_META,
+  SEVERITY_META,
+  type ViolationCaseRow,
+  type ViolationReviewMode,
+  MAX_TAB_SWITCHES,
+} from './case-meta';
 
 interface ViolationCasesTableProps {
+  reviewMode: ViolationReviewMode;
   rows: ViolationCaseRow[];
-  onReview: (studentId: string, studentName: string) => void;
+  onReview: (rowKey: string) => void;
 }
 
-export function ViolationCasesTable({ rows, onReview }: ViolationCasesTableProps) {
+export function ViolationCasesTable({ reviewMode, rows, onReview }: ViolationCasesTableProps) {
+  const showExamColumn = reviewMode !== 'per_exam';
+  const showCourseColumn = reviewMode !== 'per_course';
+  const colSpan = 7 + (showExamColumn ? 1 : 0) + (showCourseColumn ? 1 : 0);
+  const minWidthClassName = showExamColumn || showCourseColumn ? 'min-w-[1160px]' : 'min-w-[980px]';
+
   return (
     <div className="bg-white rounded-2xl border border-gray-200 overflow-hidden">
       <PaginatedTable
         items={rows}
-        colSpan={7}
-        minWidthClassName="min-w-[1040px]"
+        colSpan={colSpan}
+        minWidthClassName={minWidthClassName}
         header={(
           <thead>
             <tr className="border-b border-gray-200 bg-gray-50">
+              {showExamColumn && <th className="px-5 py-3.5 text-left font-semibold text-gray-600">Exam</th>}
+              {showCourseColumn && <th className="px-5 py-3.5 text-left font-semibold text-gray-600">Course</th>}
               <th className="px-5 py-3.5 text-left font-semibold text-gray-600">Student</th>
               <th className="px-5 py-3.5 text-center font-semibold text-gray-600">Events</th>
               <th className="px-5 py-3.5 text-left font-semibold text-gray-600">Suggested Severity</th>
@@ -35,9 +49,19 @@ export function ViolationCasesTable({ rows, onReview }: ViolationCasesTableProps
 
               return (
                 <tr
-                  key={row.studentId}
+                  key={row.rowKey}
                   className={`border-b border-gray-100 last:border-0 hover:bg-gray-50 transition-colors ${isPending ? 'bg-amber-50/30' : ''}`}
                 >
+                  {showExamColumn && (
+                    <td className="px-5 py-4 text-sm font-medium text-gray-800">
+                      {row.examTitle}
+                    </td>
+                  )}
+                  {showCourseColumn && (
+                    <td className="px-5 py-4 text-sm text-gray-600">
+                      {row.className}
+                    </td>
+                  )}
                   <td className="px-5 py-4">
                     <div className="font-semibold text-gray-900">{row.studentName}</div>
                     {row.studentEmail && (
@@ -95,7 +119,7 @@ export function ViolationCasesTable({ rows, onReview }: ViolationCasesTableProps
                   <td className="px-5 py-4 text-right">
                     <button
                       type="button"
-                      onClick={() => onReview(row.studentId, row.studentName)}
+                      onClick={() => onReview(row.rowKey)}
                       className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl text-xs font-semibold bg-amber-500 hover:bg-amber-600 text-white transition-colors"
                     >
                       Review

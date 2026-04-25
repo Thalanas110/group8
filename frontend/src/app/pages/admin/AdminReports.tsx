@@ -9,6 +9,48 @@ import {
 } from 'recharts';
 
 const COLORS = ['#111827', '#374151', '#6B7280', '#9CA3AF', '#D1D5DB', '#E5E7EB'];
+const MONTH_LABEL_FORMATTER = new Intl.DateTimeFormat('en-US', { month: 'short', year: 'numeric', timeZone: 'UTC' });
+
+function normalizeMonthKey(value?: string | null): string | null {
+  if (!value) return null;
+
+  const directMatch = value.match(/^(\d{4})-(\d{2})/);
+  if (directMatch) {
+    return `${directMatch[1]}-${directMatch[2]}`;
+  }
+
+  const parsed = new Date(value);
+  if (Number.isNaN(parsed.getTime())) return null;
+
+  const year = parsed.getUTCFullYear();
+  const month = String(parsed.getUTCMonth() + 1).padStart(2, '0');
+  return `${year}-${month}`;
+}
+
+function monthKeyToDate(monthKey: string): Date {
+  const [yearString, monthString] = monthKey.split('-');
+  return new Date(Date.UTC(Number(yearString), Number(monthString) - 1, 1));
+}
+
+function shiftMonthKey(monthKey: string, offset: number): string {
+  const monthDate = monthKeyToDate(monthKey);
+  monthDate.setUTCMonth(monthDate.getUTCMonth() + offset);
+  return `${monthDate.getUTCFullYear()}-${String(monthDate.getUTCMonth() + 1).padStart(2, '0')}`;
+}
+
+function listMonthKeys(startKey: string, endKey: string): string[] {
+  const keys: string[] = [];
+  let cursor = startKey;
+  let guard = 0;
+
+  while (cursor <= endKey && guard < 240) {
+    keys.push(cursor);
+    cursor = shiftMonthKey(cursor, 1);
+    guard += 1;
+  }
+
+  return keys;
+}
 
 export function AdminReports() {
   const { exams, submissions, classes, users, getUserById } = useApp();
@@ -36,15 +78,42 @@ export function AdminReports() {
   const failCount = gradedSubs.length - passCount;
   const passPieData = [{ name: 'Passed', value: passCount }, { name: 'Failed', value: failCount }].filter(d => d.value > 0);
 
-  // Monthly submissions trend (mock - spread over past 6 months)
-  const months = ['Sep', 'Oct', 'Nov', 'Dec', 'Jan', 'Feb'];
-  const monthlyData = months.map((month, i) => ({
-    month,
-    submissions: Math.floor(submissions.length * (0.1 + i * 0.15)) + Math.floor(Math.random() * 2),
-    exams: Math.floor(exams.length * (0.1 + i * 0.1)),
+  // Monthly activity trend based on real exam creation and submission timestamps.
+  const examCountByMonth = new Map<string, number>();
+  exams.forEach(exam => {
+    const monthKey = normalizeMonthKey(exam.createdAt);
+    if (!monthKey) return;
+    examCountByMonth.set(monthKey, (examCountByMonth.get(monthKey) ?? 0) + 1);
+  });
+
+  const submissionCountByMonth = new Map<string, number>();
+  submissions.forEach(submission => {
+    const monthKey = normalizeMonthKey(submission.submittedAt || submission.gradedAt);
+    if (!monthKey) return;
+    submissionCountByMonth.set(monthKey, (submissionCountByMonth.get(monthKey) ?? 0) + 1);
+  });
+
+  const observedMonthKeys = Array.from(new Set([
+    ...examCountByMonth.keys(),
+    ...submissionCountByMonth.keys(),
+  ])).sort();
+
+  let trendMonthKeys: string[];
+  if (observedMonthKeys.length === 0) {
+    const currentMonthKey = normalizeMonthKey(new Date().toISOString()) ?? '1970-01';
+    trendMonthKeys = Array.from({ length: 6 }, (_, index) => shiftMonthKey(currentMonthKey, index - 5));
+  } else {
+    const firstObservedMonth = observedMonthKeys[0];
+    const lastObservedMonth = observedMonthKeys[observedMonthKeys.length - 1];
+    const rangeKeys = listMonthKeys(firstObservedMonth, lastObservedMonth);
+    trendMonthKeys = rangeKeys.length > 6 ? rangeKeys.slice(-6) : rangeKeys;
+  }
+
+  const monthlyData = trendMonthKeys.map(monthKey => ({
+    month: MONTH_LABEL_FORMATTER.format(monthKeyToDate(monthKey)),
+    submissions: submissionCountByMonth.get(monthKey) ?? 0,
+    exams: examCountByMonth.get(monthKey) ?? 0,
   }));
-  monthlyData[monthlyData.length - 1].submissions = submissions.length;
-  monthlyData[monthlyData.length - 1].exams = exams.length;
 
   // Top performers
   const studentScores: Record<string, { name: string; total: number; count: number }> = {};
