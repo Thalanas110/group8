@@ -22,4 +22,5 @@ final class DocsController
             'data' => $this->verificationService->verifyRequiredEndpoints(),
         ];
     }
+
 }

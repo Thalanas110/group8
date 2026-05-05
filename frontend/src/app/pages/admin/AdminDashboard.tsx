@@ -1,6 +1,6 @@
 import React from 'react';
 import { useNavigate } from 'react-router';
-import { Users, FileText, Clipboard, TrendingUp, ArrowRight, Code2, BarChart2, ScrollText, ShieldAlert, Archive } from 'lucide-react';
+import { Users, FileText, Clipboard, TrendingUp, ArrowRight, Code2, BarChart2, Archive } from 'lucide-react';
 import { useApp } from '../../context/AppContext';
 import { StatCard } from '../../components/shared/StatCard';
 import { Badge, getStatusBadge } from '../../components/shared/Badge';
@@ -114,8 +114,6 @@ export function AdminDashboard() {
           { label: 'Users', icon: Users, path: '/admin/users' },
           { label: 'Exams', icon: FileText, path: '/admin/exams' },
           { label: 'Results', icon: Clipboard, path: '/admin/results' },
-          { label: 'Violations', icon: ShieldAlert, path: '/admin/violations' },
-          { label: 'Logs', icon: ScrollText, path: '/admin/logs' },
           { label: 'Reports', icon: BarChart2, path: '/admin/reports' },
           { label: 'Tools', icon: Archive, path: '/admin/tools' },
           { label: 'API Docs', icon: Code2, path: '/admin/api' },

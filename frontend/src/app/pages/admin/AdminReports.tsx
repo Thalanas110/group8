@@ -1,7 +1,6 @@
 import React from 'react';
 import { TrendingUp, Award, Users, FileText } from 'lucide-react';
 import { useApp } from '../../context/AppContext';
-import { QuestionAnalyticsSection } from '../../components/analytics/QuestionAnalyticsSection';
 import { PaginatedTable } from '../../components/shared/PaginatedTable';
 import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
@@ -307,7 +306,6 @@ export function AdminReports() {
         />
       </div>
 
-      <QuestionAnalyticsSection audienceLabel="Admin" />
     </div>
   );
 }

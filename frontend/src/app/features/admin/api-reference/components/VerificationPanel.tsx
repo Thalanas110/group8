@@ -1,5 +1,5 @@
 import React from 'react';
-import { ShieldCheck, Sparkles } from 'lucide-react';
+import { Download, ShieldCheck, Sparkles } from 'lucide-react';
 import type { ApiDocsVerifyResult } from '../../../../services/api';
 
 type VerifyState = 'idle' | 'loading' | 'verified' | 'error';
@@ -9,6 +9,7 @@ interface VerificationPanelProps {
   result: ApiDocsVerifyResult | null;
   errorMessage: string;
   onVerify: () => void;
+  onExport: () => void;
 }
 
 export function VerificationPanel({
@@ -16,6 +17,7 @@ export function VerificationPanel({
   result,
   errorMessage,
   onVerify,
+  onExport,
 }: VerificationPanelProps) {
   const matched = result?.summary.matched ?? 0;
   const required = result?.summary.required ?? 13;
@@ -33,14 +35,23 @@ export function VerificationPanel({
             <p className="text-xs text-gray-400">Checks required endpoints against backend route source code.</p>
           </div>
         </div>
-        <button
-          onClick={onVerify}
-          disabled={state === 'loading'}
-          className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-emerald-500 text-gray-950 font-semibold text-sm hover:bg-emerald-400 disabled:opacity-60 transition-colors"
-        >
-          <Sparkles className={`w-4 h-4 ${state === 'loading' ? 'animate-pulse' : ''}`} />
-          {state === 'loading' ? 'Verifying...' : 'Verify Endpoints'}
-        </button>
+        <div className="flex items-center gap-2">
+          <button
+            onClick={onExport}
+            className="inline-flex items-center gap-2 px-4 py-2 rounded-xl border border-gray-700 bg-gray-900 text-gray-100 font-semibold text-sm hover:bg-gray-800 transition-colors"
+          >
+            <Download className="w-4 h-4" />
+            Export PDF
+          </button>
+          <button
+            onClick={onVerify}
+            disabled={state === 'loading'}
+            className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-emerald-500 text-gray-950 font-semibold text-sm hover:bg-emerald-400 disabled:opacity-60 transition-colors"
+          >
+            <Sparkles className={`w-4 h-4 ${state === 'loading' ? 'animate-pulse' : ''}`} />
+            {state === 'loading' ? 'Verifying...' : 'Verify Endpoints'}
+          </button>
+        </div>
       </div>
 
       <div className="px-6 py-4">

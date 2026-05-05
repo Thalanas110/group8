@@ -10,6 +10,12 @@ use App\Support\ApiException;
 
 final class ExamsController
 {
+    /*
+    public function __construct($examService)
+    {
+        $this->examService = $examService;
+    }
+    */
     public function __construct(private ExamService $examService)
     {
     }

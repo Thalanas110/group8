@@ -189,8 +189,8 @@ If the database is empty and these credentials are missing, bootstrap requests w
 - Exams: `/exams`, `/exams/:id`
 - Exam accommodations: `/exams/:id/accommodations`, `/exams/:id/accommodations/:studentId`
 - Results: `/results/start`, `/results/submit`, `/results/student/:id`, `/results/:id/grade`
-- Admin: `/admin/exams`, `/admin/results`, `/admin/logs`, `/admin/violations`
-- Reports: `/reports/exam-performance`, `/reports/pass-fail`, `/reports/question-analytics`
+- Admin: `/admin/exams`, `/admin/results`
+- Reports: `/reports/exam-performance`, `/reports/pass-fail`
 - Classes: `/classes`, `/classes/join`, `/classes/:id/leave`, `/classes/:id/enroll`, `/classes/:id/students/:studentId`
 - Data: `/data/all`, `/data/reseed`
 - Docs: `/docs/verify`

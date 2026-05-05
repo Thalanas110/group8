@@ -9,6 +9,10 @@ use App\Services\SeedService;
 
 final class DataController
 {
+    // constructor property promotion.
+    // i found this hilarious, but this is also a good refactor for some
+    // reason.
+    // 2009 codings
     public function __construct(
         private DataService $dataService,
         private SeedService $seedService,
