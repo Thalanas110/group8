@@ -20,6 +20,8 @@ import { GroupSection } from '../../features/admin/api-reference/components/Endp
 import { PhpBackendPanel } from '../../features/admin/api-reference/components/PhpBackendPanel';
 import { VerificationPanel } from '../../features/admin/api-reference/components/VerificationPanel';
 import { Modal } from '../../components/shared/Modal';
+import templateFooterUrl from '../../assets/api-docs-template-contact-footer.jpg';
+import templateHeaderUrl from '../../assets/api-docs-template-header.jpg';
 
 type VerifyState = 'idle' | 'loading' | 'verified' | 'error';
 
@@ -118,6 +120,13 @@ export function AdminApiReference() {
 
   const handleExport = (requiredGithubUrl: string) => {
     const generatedAt = new Date().toLocaleString();
+    const signatureDate = new Date().toLocaleDateString(undefined, {
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric',
+    });
+    const templateHeader = new URL(templateHeaderUrl, window.location.href).href;
+    const templateFooter = new URL(templateFooterUrl, window.location.href).href;
     const rows = API_ENDPOINTS.map(endpoint => {
       const check = verifyIndex.get(endpointKey(endpoint.method, endpoint.path));
       const statusLabel = check ? (check.exists ? 'Verified' : 'Missing') : 'Not Verified';
@@ -144,36 +153,107 @@ export function AdminApiReference() {
           <meta charset="utf-8" />
           <title>API Documentation Export</title>
           <style>
-            @page { size: A4 portrait; margin: 14mm; }
-            body { font-family: Arial, sans-serif; color: #0f172a; font-size: 12px; line-height: 1.4; }
-            h1 { margin: 0 0 6px; font-size: 20px; }
+            @page { size: Letter portrait; margin: 0; }
+            * { box-sizing: border-box; }
+            body { margin: 0; font-family: Arial, sans-serif; color: #0f172a; font-size: 11px; line-height: 1.35; }
+            .template-header,
+            .template-footer {
+              position: fixed;
+              left: 0;
+              right: 0;
+              width: 100%;
+              z-index: 1;
+            }
+            .template-header { top: 0; height: 1.32in; }
+            .template-footer { bottom: 0; height: 1.08in; }
+            .template-header img,
+            .template-footer img {
+              display: block;
+              width: 100%;
+              height: 100%;
+              object-fit: fill;
+            }
+            .content {
+              position: relative;
+              z-index: 2;
+              padding: 1.62in 0.58in 1.24in;
+            }
+            h1 { margin: 0 0 6px; font-size: 18px; }
             .meta { margin-bottom: 14px; color: #334155; }
             table { width: 100%; border-collapse: collapse; }
-            th, td { border: 1px solid #cbd5e1; padding: 6px 8px; text-align: left; vertical-align: top; }
+            th, td { border: 1px solid #cbd5e1; padding: 5px 7px; text-align: left; vertical-align: top; }
             th { background: #f1f5f9; font-size: 11px; text-transform: uppercase; letter-spacing: 0.02em; }
             code { font-family: Consolas, monospace; font-size: 11px; }
+            .signoff {
+              display: grid;
+              grid-template-columns: 1fr 1fr;
+              gap: 28px;
+              margin-top: 28px;
+              break-inside: avoid;
+              page-break-inside: avoid;
+            }
+            .signature-line {
+              border-top: 1px solid #0f172a;
+              padding-top: 6px;
+              margin-top: 38px;
+              font-weight: 700;
+            }
+            .signature-meta,
+            .member-list {
+              color: #334155;
+              font-size: 11px;
+            }
+            .member-list {
+              margin: 8px 0 0;
+              padding-left: 18px;
+            }
+            thead { display: table-header-group; }
+            tr { break-inside: avoid; page-break-inside: avoid; }
           </style>
         </head>
         <body>
-          <h1>Group 8 API Documentation</h1>
-          <div class="meta">
-            Generated: ${escapeHtml(generatedAt)}<br />
-            Base URL: ${escapeHtml(PHP_BASE_URL)}<br />
-            GitHub Repository: ${escapeHtml(requiredGithubUrl)}<br />
-            Verification: ${escapeHtml(summary)}
+          <div class="template-header">
+            <img src="${escapeHtml(templateHeader)}" alt="" />
           </div>
-          <table>
-            <thead>
-              <tr>
-                <th>Group</th>
-                <th>Method</th>
-                <th>Path</th>
-                <th>Description</th>
-                <th>Status</th>
-              </tr>
-            </thead>
-            <tbody>${rows}</tbody>
-          </table>
+          <div class="template-footer">
+            <img src="${escapeHtml(templateFooter)}" alt="" />
+          </div>
+          <div class="content">
+            <h1>Group 8 API Documentation</h1>
+            <div class="meta">
+              Generated: ${escapeHtml(generatedAt)}<br />
+              Base URL: ${escapeHtml(PHP_BASE_URL)}<br />
+              GitHub Repository: ${escapeHtml(requiredGithubUrl)}<br />
+              Verification: ${escapeHtml(summary)}
+            </div>
+            <table>
+              <thead>
+                <tr>
+                  <th>Group</th>
+                  <th>Method</th>
+                  <th>Path</th>
+                  <th>Description</th>
+                  <th>Status</th>
+                </tr>
+              </thead>
+              <tbody>${rows}</tbody>
+            </table>
+            <div class="signoff">
+              <div>
+                <div class="signature-line">Adriaan Dimate</div>
+                <div class="signature-meta">Leader</div>
+                <div class="signature-meta">Date: ${escapeHtml(signatureDate)}</div>
+              </div>
+              <div>
+                <strong>Members</strong>
+                <ol class="member-list">
+                  <li>Adriaan Dimate</li>
+                  <li>Louise Jelaine Alvarez</li>
+                  <li>Jommel Yee</li>
+                </ol>
+              </div>
+            </div>
+          </div>
         </body>
       </html>
     `;
@@ -219,7 +299,7 @@ export function AdminApiReference() {
     frameDoc.write(html);
     frameDoc.close();
 
-    window.setTimeout(printFrame, 700);
+    window.setTimeout(printFrame, 2500);
   };
 
   const submitGithubUrl = () => {

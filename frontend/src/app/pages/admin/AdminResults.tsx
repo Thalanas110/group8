@@ -10,17 +10,33 @@ export function AdminResults() {
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState<'all' | 'submitted' | 'graded'>('all');
   const [examFilter, setExamFilter] = useState('all');
+  const [classFilter, setClassFilter] = useState('all');
+  const [gradeFilter, setGradeFilter] = useState('all');
+  const [outcomeFilter, setOutcomeFilter] = useState<'all' | 'passed' | 'failed'>('all');
   const [expanded, setExpanded] = useState<string | null>(null);
 
   const filtered = submissions.filter(s => {
     const student = getUserById(s.studentId);
     const exam = exams.find(e => e.id === s.examId);
-    const matchSearch = student?.name.toLowerCase().includes(search.toLowerCase()) ||
-      exam?.title.toLowerCase().includes(search.toLowerCase());
+    const cls = exam ? classes.find(c => c.id === exam.classId) : null;
+    const query = search.trim().toLowerCase();
+    const matchSearch = query === ''
+      || (student?.name.toLowerCase().includes(query) ?? false)
+      || (student?.email.toLowerCase().includes(query) ?? false)
+      || (exam?.title.toLowerCase().includes(query) ?? false)
+      || (cls?.name.toLowerCase().includes(query) ?? false)
+      || (s.grade?.toLowerCase().includes(query) ?? false);
     const matchStatus = statusFilter === 'all' || s.status === statusFilter;
     const matchExam = examFilter === 'all' || s.examId === examFilter;
-    return matchSearch && matchStatus && matchExam;
+    const matchClass = classFilter === 'all' || exam?.classId === classFilter;
+    const matchGrade = gradeFilter === 'all' || s.grade === gradeFilter;
+    const passed = exam !== undefined && s.status === 'graded' && (s.totalScore || 0) >= exam.passingMarks;
+    const matchOutcome = outcomeFilter === 'all'
+      || (outcomeFilter === 'passed' && passed)
+      || (outcomeFilter === 'failed' && s.status === 'graded' && !passed);
+    return matchSearch && matchStatus && matchExam && matchClass && matchGrade && matchOutcome;
   });
+  const gradeOptions = Array.from(new Set(submissions.map(s => s.grade).filter((grade): grade is string => Boolean(grade)))).sort();
 
   const gradedCount = submissions.filter(s => s.status === 'graded').length;
   const pendingCount = submissions.filter(s => s.status === 'submitted').length;
@@ -69,9 +85,37 @@ export function AdminResults() {
             {exams.map(e => <SelectItem key={e.id} value={e.id}>{e.title}</SelectItem>)}
           </SelectContent>
         </Select>
+        <Select value={classFilter} onValueChange={setClassFilter}>
+          <SelectTrigger className="w-52">
+            <SelectValue placeholder="All Classes" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">All Classes</SelectItem>
+            {classes.map(cls => <SelectItem key={cls.id} value={cls.id}>{cls.name}</SelectItem>)}
+          </SelectContent>
+        </Select>
+        <Select value={gradeFilter} onValueChange={setGradeFilter}>
+          <SelectTrigger className="w-36">
+            <SelectValue placeholder="All Grades" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">All Grades</SelectItem>
+            {gradeOptions.map(grade => <SelectItem key={grade} value={grade}>{grade}</SelectItem>)}
+          </SelectContent>
+        </Select>
+        <Select value={outcomeFilter} onValueChange={value => setOutcomeFilter(value as 'all' | 'passed' | 'failed')}>
+          <SelectTrigger className="w-36">
+            <SelectValue placeholder="Outcome" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">All Outcomes</SelectItem>
+            <SelectItem value="passed">Passed</SelectItem>
+            <SelectItem value="failed">Failed</SelectItem>
+          </SelectContent>
+        </Select>
         <div className="relative flex-1 max-w-xs">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
-          <input type="text" placeholder="Search by student or exam..." value={search} onChange={e => setSearch(e.target.value)}
+          <input type="text" placeholder="Search student, exam, class..." value={search} onChange={e => setSearch(e.target.value)}
             className="w-full pl-9 pr-4 py-2.5 border border-gray-300 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white" />
         </div>
       </div>

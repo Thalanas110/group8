@@ -5,11 +5,15 @@ import { ConfirmDialog, Modal } from '../../components/shared/Modal';
 import { PaginatedTable } from '../../components/shared/PaginatedTable';
 import { Class } from '../../data/types';
 import { toast } from 'sonner';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../../components/ui/select';
 
 export function AdminClasses() {
   const { classes, exams, users, updateClass, deleteClass, getUserById } = useApp();
 
   const [search, setSearch] = useState('');
+  const [subjectFilter, setSubjectFilter] = useState('all');
+  const [teacherFilter, setTeacherFilter] = useState('all');
+  const [rosterFilter, setRosterFilter] = useState<'all' | 'has_students' | 'empty'>('all');
   const [editTarget, setEditTarget] = useState<Class | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<string | null>(null);
   const [editForm, setEditForm] = useState({ name: '', subject: '', description: '', code: '' });
@@ -46,13 +50,25 @@ export function AdminClasses() {
   };
 
   const filtered = classes.filter(c => {
-    const q = search.toLowerCase();
-    return (
+    const teacher = getUserById(c.teacherId);
+    const q = search.trim().toLowerCase();
+    const matchesSearch = !q || (
       c.name.toLowerCase().includes(q) ||
       c.subject.toLowerCase().includes(q) ||
-      c.code.toLowerCase().includes(q)
+      c.code.toLowerCase().includes(q) ||
+      (c.description ?? '').toLowerCase().includes(q) ||
+      (teacher?.name ?? '').toLowerCase().includes(q)
     );
+    const matchesSubject = subjectFilter === 'all' || c.subject === subjectFilter;
+    const matchesTeacher = teacherFilter === 'all' || c.teacherId === teacherFilter;
+    const matchesRoster = rosterFilter === 'all'
+      || (rosterFilter === 'has_students' && c.studentIds.length > 0)
+      || (rosterFilter === 'empty' && c.studentIds.length === 0);
+
+    return matchesSearch && matchesSubject && matchesTeacher && matchesRoster;
   });
+  const subjectOptions = Array.from(new Set(classes.map(c => c.subject).filter(Boolean))).sort();
+  const teacherOptions = users.filter(user => user.role === 'teacher');
 
   return (
     <div className="space-y-6">
@@ -61,16 +77,46 @@ export function AdminClasses() {
         <p className="text-gray-500 mt-0.5 text-sm">View and edit all classes across the platform</p>
       </div>
 
-      {/* Search */}
-      <div className="relative max-w-sm">
-        <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
-        <input
-          type="text"
-          placeholder="Search classes..."
-          value={search}
-          onChange={e => setSearch(e.target.value)}
-          className="pl-10 pr-4 py-2.5 border border-gray-300 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-gray-900 w-full bg-white"
-        />
+      {/* Filters */}
+      <div className="flex flex-wrap gap-3 items-center">
+        <Select value={subjectFilter} onValueChange={setSubjectFilter}>
+          <SelectTrigger className="w-full sm:w-44 bg-white">
+            <SelectValue placeholder="Subject" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">All subjects</SelectItem>
+            {subjectOptions.map(subject => <SelectItem key={subject} value={subject}>{subject}</SelectItem>)}
+          </SelectContent>
+        </Select>
+        <Select value={teacherFilter} onValueChange={setTeacherFilter}>
+          <SelectTrigger className="w-full sm:w-48 bg-white">
+            <SelectValue placeholder="Teacher" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">All teachers</SelectItem>
+            {teacherOptions.map(teacher => <SelectItem key={teacher.id} value={teacher.id}>{teacher.name}</SelectItem>)}
+          </SelectContent>
+        </Select>
+        <Select value={rosterFilter} onValueChange={value => setRosterFilter(value as 'all' | 'has_students' | 'empty')}>
+          <SelectTrigger className="w-full sm:w-44 bg-white">
+            <SelectValue placeholder="Roster" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">All rosters</SelectItem>
+            <SelectItem value="has_students">Has students</SelectItem>
+            <SelectItem value="empty">No students</SelectItem>
+          </SelectContent>
+        </Select>
+        <div className="relative flex-1 min-w-[220px] max-w-sm">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+          <input
+            type="text"
+            placeholder="Search classes, teachers..."
+            value={search}
+            onChange={e => setSearch(e.target.value)}
+            className="pl-10 pr-4 py-2.5 border border-gray-300 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-gray-900 w-full bg-white"
+          />
+        </div>
       </div>
 
       <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">

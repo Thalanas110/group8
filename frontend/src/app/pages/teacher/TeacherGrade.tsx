@@ -1,4 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react';
+import { Search } from 'lucide-react';
 import { useApp } from '../../context/AppContext';
 import { toast } from 'sonner';
 import type { Exam, Submission } from '../../data/types';
@@ -18,6 +19,7 @@ export function TeacherGrade() {
   const [feedback, setFeedback] = useState('');
   const [submittingGrade, setSubmittingGrade] = useState(false);
   const [filter, setFilter] = useState<GradeFilter>('pending');
+  const [search, setSearch] = useState('');
   const {
     violationsModal,
     violations,
@@ -40,6 +42,17 @@ export function TeacherGrade() {
     if (filter === 'pending') return submission.status === 'submitted';
     if (filter === 'graded') return submission.status === 'graded';
     return true;
+  }).filter(submission => {
+    const query = search.trim().toLowerCase();
+    if (query === '') return true;
+
+    const exam = myExams.find(item => item.id === submission.examId);
+    const student = getUserById(submission.studentId);
+    const cls = exam ? classes.find(item => item.id === exam.classId) : null;
+    return (student?.name.toLowerCase().includes(query) ?? false)
+      || (student?.email.toLowerCase().includes(query) ?? false)
+      || (exam?.title.toLowerCase().includes(query) ?? false)
+      || (cls?.name.toLowerCase().includes(query) ?? false);
   });
 
   const scopedSubs = courseExamIds
@@ -139,6 +152,17 @@ export function TeacherGrade() {
           </div>
 
           <GradeFilterTabs filter={filter} pendingCount={pendingCount} onChange={setFilter} />
+
+          <div className="relative max-w-sm">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+            <input
+              type="text"
+              placeholder="Search student, exam, class..."
+              value={search}
+              onChange={event => setSearch(event.target.value)}
+              className="w-full pl-9 pr-4 py-2.5 border border-gray-300 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white"
+            />
+          </div>
 
           <ExamSelectionChips
             exams={myExams}

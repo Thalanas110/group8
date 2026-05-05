@@ -1,7 +1,8 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { TrendingUp, Award, Users, FileText } from 'lucide-react';
 import { useApp } from '../../context/AppContext';
 import { PaginatedTable } from '../../components/shared/PaginatedTable';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../../components/ui/select';
 import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
   PieChart, Pie, Cell, Legend, LineChart, Line
@@ -53,8 +54,35 @@ function listMonthKeys(startKey: string, endKey: string): string[] {
 
 export function AdminReports() {
   const { exams, submissions, classes, users, getUserById } = useApp();
+  const [classFilter, setClassFilter] = useState('all');
+  const [subjectFilter, setSubjectFilter] = useState('all');
+  const [teacherFilter, setTeacherFilter] = useState('all');
+  const [outcomeFilter, setOutcomeFilter] = useState<'all' | 'passed' | 'failed'>('all');
 
-  const gradedSubs = submissions.filter(s => s.status === 'graded');
+  const subjectOptions = Array.from(new Set(classes.map(c => c.subject).filter(Boolean))).sort();
+  const teacherOptions = users.filter(user => user.role === 'teacher');
+  const filteredClasses = classes.filter(cls => {
+    const matchesClass = classFilter === 'all' || cls.id === classFilter;
+    const matchesSubject = subjectFilter === 'all' || cls.subject === subjectFilter;
+    const matchesTeacher = teacherFilter === 'all' || cls.teacherId === teacherFilter;
+
+    return matchesClass && matchesSubject && matchesTeacher;
+  });
+  const filteredClassIds = new Set(filteredClasses.map(cls => cls.id));
+  const scopedExams = exams.filter(exam => filteredClassIds.has(exam.classId));
+  const scopedExamIds = new Set(scopedExams.map(exam => exam.id));
+  const scopedSubmissions = submissions.filter(submission => scopedExamIds.has(submission.examId));
+  const gradedSubs = scopedSubmissions.filter(s => {
+    if (s.status !== 'graded') return false;
+    if (outcomeFilter === 'all') return true;
+    const exam = scopedExams.find(item => item.id === s.examId);
+    const passed = !!exam && (s.totalScore || 0) >= exam.passingMarks;
+
+    return outcomeFilter === 'passed' ? passed : !passed;
+  });
+  const hasScopeFilter = classFilter !== 'all' || subjectFilter !== 'all' || teacherFilter !== 'all';
+  const activeLearnerIds = new Set(filteredClasses.flatMap(cls => cls.studentIds));
+  const activeLearnerCount = hasScopeFilter ? activeLearnerIds.size : users.filter(u => u.role === 'student').length;
 
   // Grade distribution
   const gradeCount: Record<string, number> = {};
@@ -62,8 +90,8 @@ export function AdminReports() {
   const gradeData = ['A+', 'A', 'B', 'C', 'C+', 'B-', 'D', 'F'].filter(g => gradeCount[g]).map(g => ({ grade: g, count: gradeCount[g] || 0 }));
 
   // Class average performance
-  const classPerf = classes.map(cls => {
-    const classExamIds = new Set(exams.filter(e => e.classId === cls.id).map(e => e.id));
+  const classPerf = filteredClasses.map(cls => {
+    const classExamIds = new Set(scopedExams.filter(e => e.classId === cls.id).map(e => e.id));
     const classSubs = gradedSubs.filter(s => classExamIds.has(s.examId));
     const avg = classSubs.length > 0 ? Math.round(classSubs.reduce((sum, s) => sum + (s.percentage || 0), 0) / classSubs.length) : 0;
     return { name: cls.name.length > 16 ? cls.name.substring(0, 16) + '...' : cls.name, avg, submissions: classSubs.length };
@@ -79,14 +107,15 @@ export function AdminReports() {
 
   // Monthly activity trend based on real exam creation and submission timestamps.
   const examCountByMonth = new Map<string, number>();
-  exams.forEach(exam => {
+  scopedExams.forEach(exam => {
     const monthKey = normalizeMonthKey(exam.createdAt);
     if (!monthKey) return;
     examCountByMonth.set(monthKey, (examCountByMonth.get(monthKey) ?? 0) + 1);
   });
 
   const submissionCountByMonth = new Map<string, number>();
-  submissions.forEach(submission => {
+  const trendSubmissions = outcomeFilter === 'all' ? scopedSubmissions : gradedSubs;
+  trendSubmissions.forEach(submission => {
     const monthKey = normalizeMonthKey(submission.submittedAt || submission.gradedAt);
     if (!monthKey) return;
     submissionCountByMonth.set(monthKey, (submissionCountByMonth.get(monthKey) ?? 0) + 1);
@@ -131,7 +160,7 @@ export function AdminReports() {
   // Subject performance
   const subjectPerf: Record<string, { total: number; count: number }> = {};
   gradedSubs.forEach(s => {
-    const exam = exams.find(e => e.id === s.examId);
+    const exam = scopedExams.find(e => e.id === s.examId);
     const cls = exam ? classes.find(c => c.id === exam.classId) : null;
     if (!cls) return;
     if (!subjectPerf[cls.subject]) subjectPerf[cls.subject] = { total: 0, count: 0 };
@@ -158,8 +187,8 @@ export function AdminReports() {
         {[
           { label: 'Platform Avg Score', value: `${platformAvg}%`, icon: TrendingUp },
           { label: 'Pass Rate', value: `${passRate}%`, icon: Award },
-          { label: 'Total Assessments', value: exams.length, icon: FileText },
-          { label: 'Active Learners', value: users.filter(u => u.role === 'student').length, icon: Users },
+          { label: 'Total Assessments', value: scopedExams.length, icon: FileText },
+          { label: 'Active Learners', value: activeLearnerCount, icon: Users },
         ].map(s => (
           <div key={s.label} className="bg-white rounded-xl border border-gray-200 p-5">
             <div className="w-10 h-10 bg-gray-100 rounded-lg flex items-center justify-center mb-3">
@@ -169,6 +198,51 @@ export function AdminReports() {
             <div className="text-xs text-gray-400 mt-0.5 uppercase tracking-wider">{s.label}</div>
           </div>
         ))}
+      </div>
+
+      <div className="bg-white rounded-xl border border-gray-200 p-4">
+        <div className="flex flex-wrap gap-3 items-center">
+          <Select value={classFilter} onValueChange={setClassFilter}>
+            <SelectTrigger className="w-full sm:w-48">
+              <SelectValue placeholder="Class" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All classes</SelectItem>
+              {classes.map(cls => <SelectItem key={cls.id} value={cls.id}>{cls.name}</SelectItem>)}
+            </SelectContent>
+          </Select>
+          <Select value={subjectFilter} onValueChange={setSubjectFilter}>
+            <SelectTrigger className="w-full sm:w-44">
+              <SelectValue placeholder="Subject" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All subjects</SelectItem>
+              {subjectOptions.map(subject => <SelectItem key={subject} value={subject}>{subject}</SelectItem>)}
+            </SelectContent>
+          </Select>
+          <Select value={teacherFilter} onValueChange={setTeacherFilter}>
+            <SelectTrigger className="w-full sm:w-48">
+              <SelectValue placeholder="Teacher" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All teachers</SelectItem>
+              {teacherOptions.map(teacher => <SelectItem key={teacher.id} value={teacher.id}>{teacher.name}</SelectItem>)}
+            </SelectContent>
+          </Select>
+          <Select value={outcomeFilter} onValueChange={value => setOutcomeFilter(value as 'all' | 'passed' | 'failed')}>
+            <SelectTrigger className="w-full sm:w-44">
+              <SelectValue placeholder="Outcome" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All outcomes</SelectItem>
+              <SelectItem value="passed">Passed only</SelectItem>
+              <SelectItem value="failed">Failed only</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+        <p className="text-xs text-gray-400 mt-3">
+          Report filters apply to KPIs, charts, class performance, and top performers.
+        </p>
       </div>
 
       {/* Row 1: Trend + Pass/Fail */}

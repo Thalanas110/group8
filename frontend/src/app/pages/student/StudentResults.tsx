@@ -1,8 +1,9 @@
 import React, { useState } from 'react';
-import { TrendingUp, Award, FileText, AlertTriangle } from 'lucide-react';
+import { TrendingUp, Award, FileText, AlertTriangle, Search } from 'lucide-react';
 import { useApp } from '../../context/AppContext';
 import { Badge, getGradeBadge } from '../../components/shared/Badge';
 import { PaginatedTable } from '../../components/shared/PaginatedTable';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../../components/ui/select';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, LineChart, Line, PieChart, Pie, Cell, Legend } from 'recharts';
 
 const GRADE_COLORS: Record<string, string> = {
@@ -14,6 +15,10 @@ const PIE_COLORS = ['#16A34A', '#22C55E', '#2563EB', '#D97706', '#EA580C', '#DC2
 export function StudentResults() {
   const { currentUser, classes, exams, getSubmissionsByStudent } = useApp();
   const [selectedSub, setSelectedSub] = useState<string | null>(null);
+  const [search, setSearch] = useState('');
+  const [classFilter, setClassFilter] = useState('all');
+  const [gradeFilter, setGradeFilter] = useState('all');
+  const [outcomeFilter, setOutcomeFilter] = useState<'all' | 'passed' | 'failed'>('all');
 
   if (!currentUser) return null;
 
@@ -21,25 +26,45 @@ export function StudentResults() {
   const gradedSubs = allSubs.filter(s => s.status === 'graded');
   const myClassIds = new Set(classes.filter(c => c.studentIds.includes(currentUser.id)).map(c => c.id));
   const myExams = exams.filter(e => myClassIds.has(e.classId));
+  const myClasses = classes.filter(c => myClassIds.has(c.id));
+  const gradeOptions = Array.from(new Set(gradedSubs.map(s => s.grade).filter((grade): grade is string => Boolean(grade)))).sort();
+  const filteredGradedSubs = gradedSubs.filter(submission => {
+    const exam = myExams.find(e => e.id === submission.examId);
+    const cls = exam ? classes.find(c => c.id === exam.classId) : null;
+    const query = search.trim().toLowerCase();
+    const passed = exam !== undefined && (submission.totalScore || 0) >= exam.passingMarks;
 
-  const avgScore = gradedSubs.length > 0 ? Math.round(gradedSubs.reduce((sum, s) => sum + (s.percentage || 0), 0) / gradedSubs.length) : 0;
-  const bestScore = gradedSubs.length > 0 ? Math.max(...gradedSubs.map(s => s.percentage || 0)) : 0;
-  const passCount = gradedSubs.filter(s => {
+    const matchSearch = query === ''
+      || (exam?.title.toLowerCase().includes(query) ?? false)
+      || (cls?.name.toLowerCase().includes(query) ?? false)
+      || (cls?.subject.toLowerCase().includes(query) ?? false)
+      || (submission.grade?.toLowerCase().includes(query) ?? false);
+    const matchClass = classFilter === 'all' || exam?.classId === classFilter;
+    const matchGrade = gradeFilter === 'all' || submission.grade === gradeFilter;
+    const matchOutcome = outcomeFilter === 'all'
+      || (outcomeFilter === 'passed' && passed)
+      || (outcomeFilter === 'failed' && !passed);
+    return matchSearch && matchClass && matchGrade && matchOutcome;
+  });
+
+  const avgScore = filteredGradedSubs.length > 0 ? Math.round(filteredGradedSubs.reduce((sum, s) => sum + (s.percentage || 0), 0) / filteredGradedSubs.length) : 0;
+  const bestScore = filteredGradedSubs.length > 0 ? Math.max(...filteredGradedSubs.map(s => s.percentage || 0)) : 0;
+  const passCount = filteredGradedSubs.filter(s => {
     const exam = myExams.find(e => e.id === s.examId);
     return exam && (s.totalScore || 0) >= exam.passingMarks;
   }).length;
 
-  const barData = gradedSubs.map(s => {
+  const barData = filteredGradedSubs.map(s => {
     const exam = myExams.find(e => e.id === s.examId);
     return { name: exam?.title?.substring(0, 14) + '...' || 'Exam', score: s.percentage || 0, grade: s.grade };
   });
 
   // Grade distribution
   const gradeCount: Record<string, number> = {};
-  gradedSubs.forEach(s => { if (s.grade) gradeCount[s.grade] = (gradeCount[s.grade] || 0) + 1; });
+  filteredGradedSubs.forEach(s => { if (s.grade) gradeCount[s.grade] = (gradeCount[s.grade] || 0) + 1; });
   const pieData = Object.entries(gradeCount).map(([grade, count]) => ({ name: grade, value: count }));
 
-  const detailedSub = gradedSubs.find(s => s.id === selectedSub);
+  const detailedSub = filteredGradedSubs.find(s => s.id === selectedSub);
   const detailedExam = detailedSub ? myExams.find(e => e.id === detailedSub.examId) : null;
 
   return (
@@ -52,10 +77,10 @@ export function StudentResults() {
       {/* Summary Cards */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         {[
-          { label: 'Exams Taken',   value: gradedSubs.length, icon: FileText, bg: 'bg-gray-100', color: 'text-gray-600' },
+          { label: 'Exams Taken',   value: filteredGradedSubs.length, icon: FileText, bg: 'bg-gray-100', color: 'text-gray-600' },
           { label: 'Average Score', value: `${avgScore}%`, icon: TrendingUp, bg: 'bg-gray-100', color: 'text-gray-600' },
           { label: 'Best Score',    value: `${bestScore}%`, icon: Award, bg: 'bg-gray-100', color: 'text-gray-600' },
-          { label: 'Passed',        value: `${passCount}/${gradedSubs.length}`, icon: AlertTriangle, bg: 'bg-gray-100', color: 'text-gray-600' },
+          { label: 'Passed',        value: `${passCount}/${filteredGradedSubs.length}`, icon: AlertTriangle, bg: 'bg-gray-100', color: 'text-gray-600' },
         ].map(s => (
           <div key={s.label} className="bg-white rounded-xl border border-gray-200 p-5">
             <div className={`w-10 h-10 ${s.bg} rounded-xl flex items-center justify-center mb-3`}>
@@ -74,6 +99,54 @@ export function StudentResults() {
         </div>
       ) : (
         <>
+          <div className="flex flex-wrap gap-3 items-center">
+            <Select value={classFilter} onValueChange={setClassFilter}>
+              <SelectTrigger className="w-52">
+                <SelectValue placeholder="All Classes" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Classes</SelectItem>
+                {myClasses.map(cls => <SelectItem key={cls.id} value={cls.id}>{cls.name}</SelectItem>)}
+              </SelectContent>
+            </Select>
+            <Select value={gradeFilter} onValueChange={setGradeFilter}>
+              <SelectTrigger className="w-36">
+                <SelectValue placeholder="All Grades" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Grades</SelectItem>
+                {gradeOptions.map(grade => <SelectItem key={grade} value={grade}>{grade}</SelectItem>)}
+              </SelectContent>
+            </Select>
+            <Select value={outcomeFilter} onValueChange={value => setOutcomeFilter(value as 'all' | 'passed' | 'failed')}>
+              <SelectTrigger className="w-36">
+                <SelectValue placeholder="Outcome" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Outcomes</SelectItem>
+                <SelectItem value="passed">Passed</SelectItem>
+                <SelectItem value="failed">Failed</SelectItem>
+              </SelectContent>
+            </Select>
+            <div className="relative flex-1 max-w-sm">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+              <input
+                type="text"
+                placeholder="Search exam, class, subject..."
+                value={search}
+                onChange={event => setSearch(event.target.value)}
+                className="w-full pl-9 pr-4 py-2.5 border border-gray-300 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white"
+              />
+            </div>
+          </div>
+
+          {filteredGradedSubs.length === 0 ? (
+            <div className="text-center py-16 text-gray-400 bg-white rounded-xl border border-gray-200">
+              <FileText className="w-12 h-12 mx-auto mb-3 opacity-30" />
+              <div>No results match the selected filters</div>
+            </div>
+          ) : (
+            <>
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             {/* Bar Chart */}
             <div className="bg-white rounded-xl border border-gray-200 p-6">
@@ -118,7 +191,7 @@ export function StudentResults() {
               <h2 className="text-base font-semibold text-gray-900">All Results</h2>
             </div>
             <PaginatedTable
-              items={gradedSubs}
+              items={filteredGradedSubs}
               colSpan={7}
               minWidthClassName="min-w-[860px]"
               bodyClassName="divide-y divide-gray-100"
@@ -198,6 +271,8 @@ export function StudentResults() {
                 })}
               </div>
             </div>
+          )}
+            </>
           )}
         </>
       )}

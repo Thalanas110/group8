@@ -3,6 +3,7 @@ import { Users, BookOpen, Hash, LogOut, Plus, GraduationCap, Search } from 'luci
 import { useApp } from '../../context/AppContext';
 import { toast } from 'sonner';
 import { ConfirmDialog } from '../../components/shared/Modal';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../../components/ui/select';
 
 export function StudentClasses() {
   const { currentUser, classes, exams, joinClassByCode, leaveClass, getUserById } = useApp();
@@ -11,14 +12,35 @@ export function StudentClasses() {
   const [joiningLoading, setJoiningLoading] = useState(false);
   const [leaveTarget, setLeaveTarget] = useState<string | null>(null);
   const [search, setSearch] = useState('');
+  const [subjectFilter, setSubjectFilter] = useState('all');
+  const [teacherFilter, setTeacherFilter] = useState('all');
 
   if (!currentUser) return null;
 
   const myClasses = classes.filter(c => c.studentIds.includes(currentUser.id));
-  const filteredClasses = myClasses.filter(c =>
-    c.name.toLowerCase().includes(search.toLowerCase()) ||
-    c.subject.toLowerCase().includes(search.toLowerCase())
+  const subjectOptions = Array.from(new Set(myClasses.map(c => c.subject).filter(Boolean))).sort();
+  const teacherOptions = Array.from(
+    new Map(
+      myClasses
+        .map(c => getUserById(c.teacherId))
+        .filter(Boolean)
+        .map(teacher => [teacher!.id, teacher!])
+    ).values()
   );
+  const filteredClasses = myClasses.filter(c => {
+    const teacher = getUserById(c.teacherId);
+    const query = search.trim().toLowerCase();
+    const matchesSearch = !query || (
+      c.name.toLowerCase().includes(query) ||
+      c.subject.toLowerCase().includes(query) ||
+      c.code.toLowerCase().includes(query) ||
+      (teacher?.name ?? '').toLowerCase().includes(query)
+    );
+    const matchesSubject = subjectFilter === 'all' || c.subject === subjectFilter;
+    const matchesTeacher = teacherFilter === 'all' || c.teacherId === teacherFilter;
+
+    return matchesSearch && matchesSubject && matchesTeacher;
+  });
 
   const handleJoin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -113,19 +135,39 @@ export function StudentClasses() {
 
         {/* Classes List */}
         <div className="lg:col-span-2 space-y-4">
-          <div className="relative">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
-            <input
-              type="text" placeholder="Search classes..." value={search} onChange={e => setSearch(e.target.value)}
-              className="w-full pl-10 pr-4 py-2.5 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-gray-900 text-sm bg-white"
-            />
+          <div className="flex flex-wrap gap-3 items-center">
+            <Select value={subjectFilter} onValueChange={setSubjectFilter}>
+              <SelectTrigger className="w-full sm:w-44 bg-white">
+                <SelectValue placeholder="Subject" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All subjects</SelectItem>
+                {subjectOptions.map(subject => <SelectItem key={subject} value={subject}>{subject}</SelectItem>)}
+              </SelectContent>
+            </Select>
+            <Select value={teacherFilter} onValueChange={setTeacherFilter}>
+              <SelectTrigger className="w-full sm:w-44 bg-white">
+                <SelectValue placeholder="Teacher" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All teachers</SelectItem>
+                {teacherOptions.map(teacher => <SelectItem key={teacher.id} value={teacher.id}>{teacher.name}</SelectItem>)}
+              </SelectContent>
+            </Select>
+            <div className="relative flex-1 min-w-[220px]">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+              <input
+                type="text" placeholder="Search classes..." value={search} onChange={e => setSearch(e.target.value)}
+                className="w-full pl-10 pr-4 py-2.5 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-gray-900 text-sm bg-white"
+              />
+            </div>
           </div>
 
           {filteredClasses.length === 0 ? (
             <div className="bg-white rounded-xl border border-gray-200 p-12 text-center">
               <GraduationCap className="w-12 h-12 mx-auto text-gray-300 mb-3" />
-              <div className="text-gray-500 font-medium">No classes yet</div>
-              <div className="text-gray-400 text-sm mt-1">Enter a class code to join your first class</div>
+              <div className="text-gray-500 font-medium">{myClasses.length === 0 ? 'No classes yet' : 'No classes match the selected filters'}</div>
+              <div className="text-gray-400 text-sm mt-1">{myClasses.length === 0 ? 'Enter a class code to join your first class' : 'Adjust the search, subject, or teacher filter.'}</div>
             </div>
           ) : (
             <div className="space-y-3">

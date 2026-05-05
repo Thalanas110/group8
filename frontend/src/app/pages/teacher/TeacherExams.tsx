@@ -1,10 +1,11 @@
 import React, { useState } from 'react';
-import { Plus } from 'lucide-react';
+import { Plus, Search } from 'lucide-react';
 import { ExamAccommodationsModal } from '../../components/shared/ExamAccommodationsModal';
 import { ConfirmDialog } from '../../components/shared/Modal';
 import { useApp } from '../../context/AppContext';
 import { toast } from 'sonner';
 import type { Exam, ExamStatus, Question } from '../../data/types';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../../components/ui/select';
 import { ExamCard } from '../../features/teacher/exams/components/ExamCard';
 import { ExamEditorModal } from '../../features/teacher/exams/components/ExamEditorModal';
 import { EmptyExamsState } from '../../features/teacher/exams/components/EmptyExamsState';
@@ -30,6 +31,8 @@ export function TeacherExams() {
   const [deleteTarget, setDeleteTarget] = useState<string | null>(null);
   const [expandedExam, setExpandedExam] = useState<string | null>(null);
   const [filter, setFilter] = useState<TeacherExamFilter>('all');
+  const [search, setSearch] = useState('');
+  const [classFilter, setClassFilter] = useState('all');
   const [accommodationsExam, setAccommodationsExam] = useState<Exam | null>(null);
   const [form, setForm] = useState<ExamFormData>(createInitialExamForm());
   const {
@@ -45,7 +48,17 @@ export function TeacherExams() {
   const myClasses = classes.filter(item => item.teacherId === currentUser.id);
   const myExams = exams
     .filter(item => item.teacherId === currentUser.id)
-    .filter(item => filter === 'all' || item.status === filter);
+    .filter(item => filter === 'all' || item.status === filter)
+    .filter(item => classFilter === 'all' || item.classId === classFilter)
+    .filter(item => {
+      const query = search.trim().toLowerCase();
+      const examClass = classes.find(cls => cls.id === item.classId);
+      return query === ''
+        || item.title.toLowerCase().includes(query)
+        || item.description.toLowerCase().includes(query)
+        || (examClass?.name.toLowerCase().includes(query) ?? false)
+        || (examClass?.subject.toLowerCase().includes(query) ?? false);
+    });
 
   const openCreate = () => {
     setEditingExam(null);
@@ -163,6 +176,28 @@ export function TeacherExams() {
       </div>
 
       <ExamFilterTabs filter={filter} onChange={setFilter} />
+
+      <div className="flex flex-wrap gap-3 items-center">
+        <Select value={classFilter} onValueChange={setClassFilter}>
+          <SelectTrigger className="w-52">
+            <SelectValue placeholder="All Classes" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">All Classes</SelectItem>
+            {myClasses.map(cls => <SelectItem key={cls.id} value={cls.id}>{cls.name}</SelectItem>)}
+          </SelectContent>
+        </Select>
+        <div className="relative flex-1 max-w-sm">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+          <input
+            type="text"
+            placeholder="Search exams, classes, subjects..."
+            value={search}
+            onChange={event => setSearch(event.target.value)}
+            className="w-full pl-9 pr-4 py-2.5 border border-gray-300 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white"
+          />
+        </div>
+      </div>
 
       {myExams.length === 0 ? (
         <EmptyExamsState onCreate={openCreate} />

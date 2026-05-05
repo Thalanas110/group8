@@ -13,5 +13,6 @@ export interface AllData {
 export const dataApi = {
   getAll: () => request<AllData>('GET', '/data/all', undefined, true),
 
-  reseed: () => request<{ success: boolean; message: string }>('POST', '/data/reseed', {}, true),
+  reseed: (confirmationFactors: string[]) =>
+    request<{ success: boolean; message: string }>('POST', '/data/reseed', { confirmationFactors }, true),
 };

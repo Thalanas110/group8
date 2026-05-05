@@ -12,14 +12,26 @@ export function AdminExams() {
   const { exams, classes, users, submissions, deleteExam, updateExam, getSubmissionsByExam, getUserById } = useApp();
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState<'all' | ExamStatus>('all');
+  const [classFilter, setClassFilter] = useState('all');
+  const [teacherFilter, setTeacherFilter] = useState('all');
   const [deleteTarget, setDeleteTarget] = useState<string | null>(null);
   const [viewExam, setViewExam] = useState<string | null>(null);
 
   const filtered = exams.filter(e => {
-    const matchSearch = e.title.toLowerCase().includes(search.toLowerCase());
+    const cls = classes.find(c => c.id === e.classId);
+    const teacher = getUserById(e.teacherId);
+    const query = search.trim().toLowerCase();
+    const matchSearch = query === ''
+      || e.title.toLowerCase().includes(query)
+      || e.description.toLowerCase().includes(query)
+      || (cls?.name.toLowerCase().includes(query) ?? false)
+      || (teacher?.name.toLowerCase().includes(query) ?? false);
     const matchStatus = statusFilter === 'all' || e.status === statusFilter;
-    return matchSearch && matchStatus;
+    const matchClass = classFilter === 'all' || e.classId === classFilter;
+    const matchTeacher = teacherFilter === 'all' || e.teacherId === teacherFilter;
+    return matchSearch && matchStatus && matchClass && matchTeacher;
   });
+  const teacherOptions = users.filter(user => user.role === 'teacher');
 
   const handleDelete = async (id: string) => {
     try {
@@ -84,9 +96,27 @@ export function AdminExams() {
             </button>
           ))}
         </div>
+        <Select value={classFilter} onValueChange={setClassFilter}>
+          <SelectTrigger className="w-52">
+            <SelectValue placeholder="All Classes" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">All Classes</SelectItem>
+            {classes.map(cls => <SelectItem key={cls.id} value={cls.id}>{cls.name}</SelectItem>)}
+          </SelectContent>
+        </Select>
+        <Select value={teacherFilter} onValueChange={setTeacherFilter}>
+          <SelectTrigger className="w-52">
+            <SelectValue placeholder="All Teachers" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">All Teachers</SelectItem>
+            {teacherOptions.map(teacher => <SelectItem key={teacher.id} value={teacher.id}>{teacher.name}</SelectItem>)}
+          </SelectContent>
+        </Select>
         <div className="relative flex-1 max-w-xs">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
-          <input type="text" placeholder="Search exams..." value={search} onChange={e => setSearch(e.target.value)}
+          <input type="text" placeholder="Search exams, classes, teachers..." value={search} onChange={e => setSearch(e.target.value)}
             className="w-full pl-9 pr-4 py-2.5 border border-gray-300 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white" />
         </div>
       </div>

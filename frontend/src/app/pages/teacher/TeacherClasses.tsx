@@ -5,6 +5,7 @@ import { Modal, ConfirmDialog } from '../../components/shared/Modal';
 import { Badge } from '../../components/shared/Badge';
 import { toast } from 'sonner';
 import { Class } from '../../data/types';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../../components/ui/select';
 
 export function TeacherClasses() {
   const { currentUser, classes, exams, users, addClass, updateClass, deleteClass, enrollStudent, removeStudentFromClass, getUserById } = useApp();
@@ -16,6 +17,8 @@ export function TeacherClasses() {
   const [deleteTarget, setDeleteTarget] = useState<string | null>(null);
   const [removeTarget, setRemoveTarget] = useState<{ classId: string; studentId: string } | null>(null);
   const [search, setSearch] = useState('');
+  const [subjectFilter, setSubjectFilter] = useState('all');
+  const [rosterFilter, setRosterFilter] = useState<'all' | 'has_students' | 'empty'>('all');
   const [enrollSearch, setEnrollSearch] = useState('');
   const [enrollEmail, setEnrollEmail] = useState('');
   const [enrollError, setEnrollError] = useState('');
@@ -27,6 +30,22 @@ export function TeacherClasses() {
 
   const myClasses = classes.filter(c => c.teacherId === currentUser.id);
   const students = users.filter(u => u.role === 'student');
+  const subjectOptions = Array.from(new Set(myClasses.map(c => c.subject).filter(Boolean))).sort();
+  const filteredClasses = myClasses.filter(cls => {
+    const query = search.trim().toLowerCase();
+    const matchesSearch = !query || (
+      cls.name.toLowerCase().includes(query) ||
+      cls.subject.toLowerCase().includes(query) ||
+      cls.code.toLowerCase().includes(query) ||
+      (cls.description ?? '').toLowerCase().includes(query)
+    );
+    const matchesSubject = subjectFilter === 'all' || cls.subject === subjectFilter;
+    const matchesRoster = rosterFilter === 'all'
+      || (rosterFilter === 'has_students' && cls.studentIds.length > 0)
+      || (rosterFilter === 'empty' && cls.studentIds.length === 0);
+
+    return matchesSearch && matchesSubject && matchesRoster;
+  });
 
   const generateCode = () => {
     const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
@@ -115,8 +134,48 @@ export function TeacherClasses() {
           <button onClick={openCreateModal} className="mt-4 bg-gray-900 text-white px-4 py-2 rounded-xl text-sm font-medium hover:bg-gray-700">Create Class</button>
         </div>
       ) : (
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-          {myClasses.map(cls => {
+        <>
+        <div className="flex flex-wrap gap-3 items-center">
+          <Select value={subjectFilter} onValueChange={setSubjectFilter}>
+            <SelectTrigger className="w-full sm:w-44 bg-white">
+              <SelectValue placeholder="Subject" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All subjects</SelectItem>
+              {subjectOptions.map(subject => <SelectItem key={subject} value={subject}>{subject}</SelectItem>)}
+            </SelectContent>
+          </Select>
+          <Select value={rosterFilter} onValueChange={value => setRosterFilter(value as 'all' | 'has_students' | 'empty')}>
+            <SelectTrigger className="w-full sm:w-44 bg-white">
+              <SelectValue placeholder="Roster" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All rosters</SelectItem>
+              <SelectItem value="has_students">Has students</SelectItem>
+              <SelectItem value="empty">No students</SelectItem>
+            </SelectContent>
+          </Select>
+          <div className="relative flex-1 min-w-[220px] max-w-sm">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+            <input
+              type="text"
+              placeholder="Search classes..."
+              value={search}
+              onChange={event => setSearch(event.target.value)}
+              className="w-full pl-10 pr-4 py-2.5 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-gray-900 text-sm bg-white"
+            />
+          </div>
+        </div>
+
+        {filteredClasses.length === 0 ? (
+          <div className="text-center py-16 bg-white rounded-xl border border-gray-200">
+            <BookOpen className="w-12 h-12 mx-auto text-gray-300 mb-3" />
+            <div className="text-gray-500 font-medium">No classes match the selected filters</div>
+            <div className="text-gray-400 text-sm mt-1">Adjust the search, subject, or roster filter.</div>
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+          {filteredClasses.map(cls => {
             const classExams = exams.filter(e => e.classId === cls.id);
             const enrolledStudents = students.filter(s => cls.studentIds.includes(s.id));
 
@@ -182,7 +241,9 @@ export function TeacherClasses() {
               </div>
             );
           })}
-        </div>
+          </div>
+        )}
+        </>
       )}
 
       {/* Edit Class Modal */}
