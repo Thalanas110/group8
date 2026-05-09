@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useEffect, useState, type ReactNode } from 'react';
+import React, { createContext, useContext, useEffect, useState, useMemo, useRef, type ReactNode } from 'react';
 import type { Class, Exam, Submission, User } from '../data/types';
 import {
   getClassById,
@@ -26,48 +26,43 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const [exams, setExams] = useState<Exam[]>([]);
   const [submissions, setSubmissions] = useState<Submission[]>([]);
 
+  const setters = useMemo(() => ({
+    setCurrentUser,
+    setApiLoading,
+    setUsers,
+    setClasses,
+    setExams,
+    setSubmissions,
+  }), []);
+
   useEffect(() => {
     persistStoredUser(currentUser);
   }, [currentUser]);
 
-  const authDomain = createAuthDomain({
-    setCurrentUser,
-    setApiLoading,
-    setUsers,
-    setClasses,
-    setExams,
-    setSubmissions,
-  });
+  const authDomain = useMemo(
+    () => createAuthDomain(setters),
+    [setters],
+  );
 
-  const userDomain = createUserDomain({
-    currentUser,
-    setCurrentUser,
-    setApiLoading,
-    setUsers,
-    setClasses,
-    setExams,
-    setSubmissions,
-  });
+  const userDomain = useMemo(
+    () => createUserDomain({ currentUser, ...setters }),
+    [setters, currentUser],
+  );
 
-  const classDomain = createClassDomain({
-    classes,
-    users,
-    setCurrentUser,
-    setApiLoading,
-    setUsers,
-    setClasses,
-    setExams,
-    setSubmissions,
-  });
+  const classDomain = useMemo(
+    () => createClassDomain({ classes, users, ...setters }),
+    [setters, classes, users],
+  );
 
-  const examDomain = createExamDomain({
-    setExams,
-  });
+  const examDomain = useMemo(
+    () => createExamDomain({ setExams }),
+    [setExams],
+  );
 
-  const submissionDomain = createSubmissionDomain({
-    exams,
-    setSubmissions,
-  });
+  const submissionDomain = useMemo(
+    () => createSubmissionDomain({ exams, setSubmissions }),
+    [setSubmissions, exams],
+  );
 
   useEffect(() => {
     void authDomain.loadFromApi();

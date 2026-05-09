@@ -1,45 +1,53 @@
 import { createBrowserRouter, Navigate } from 'react-router';
+import { lazy, Suspense } from 'react';
 import { RouterErrorPage } from './components/shared/RouterErrorPage';
-import { Login } from './pages/auth/Login';
-import { Register } from './pages/auth/Register';
-import { Landing } from './pages/public/Landing';
-import { StudentLayout } from './pages/student/StudentLayout';
-import { StudentDashboard } from './pages/student/StudentDashboard';
-import { StudentExams } from './pages/student/StudentExams';
-import { StudentResults } from './pages/student/StudentResults';
-import { StudentClasses } from './pages/student/StudentClasses';
-import { StudentProfile } from './pages/student/StudentProfile';
-import { TakeExam } from './pages/student/TakeExam';
-import { ExamTakingPreview } from './pages/student/ExamTakingPreview';
-import { TeacherLayout } from './pages/teacher/TeacherLayout';
-import { TeacherDashboard } from './pages/teacher/TeacherDashboard';
-import { TeacherExams } from './pages/teacher/TeacherExams';
-import { TeacherClasses } from './pages/teacher/TeacherClasses';
-import { TeacherGrade } from './pages/teacher/TeacherGrade';
-import { TeacherProfile } from './pages/teacher/TeacherProfile';
-import { TeacherViolationCases } from './pages/teacher/TeacherViolationCases';
-import { TeacherTools } from './pages/teacher/TeacherTools';
-import { AdminLayout } from './pages/admin/AdminLayout';
-import { AdminDashboard } from './pages/admin/AdminDashboard';
-import { AdminExams } from './pages/admin/AdminExams';
-import { AdminResults } from './pages/admin/AdminResults';
-import { AdminReports } from './pages/admin/AdminReports';
-import { AdminUsers } from './pages/admin/AdminUsers';
-import { AdminClasses } from './pages/admin/AdminClasses';
-import { AdminProfile } from './pages/admin/AdminProfile';
-import { AdminApiReference } from './pages/admin/AdminApiReference';
-import { AdminTools } from './pages/admin/AdminTools';
+
+const Landing = lazy(() => import('./pages/public/Landing').then(m => ({ default: m.Landing })));
+const Login = lazy(() => import('./pages/auth/Login').then(m => ({ default: m.Login })));
+const Register = lazy(() => import('./pages/auth/Register').then(m => ({ default: m.Register })));
+const ExamTakingPreview = lazy(() => import('./pages/student/ExamTakingPreview').then(m => ({ default: m.ExamTakingPreview })));
+
+const StudentLayout = lazy(() => import('./pages/student/StudentLayout').then(m => ({ default: m.StudentLayout })));
+const StudentDashboard = lazy(() => import('./pages/student/StudentDashboard').then(m => ({ default: m.StudentDashboard })));
+const StudentExams = lazy(() => import('./pages/student/StudentExams').then(m => ({ default: m.StudentExams })));
+const StudentResults = lazy(() => import('./pages/student/StudentResults').then(m => ({ default: m.StudentResults })));
+const StudentClasses = lazy(() => import('./pages/student/StudentClasses').then(m => ({ default: m.StudentClasses })));
+const StudentProfile = lazy(() => import('./pages/student/StudentProfile').then(m => ({ default: m.StudentProfile })));
+const TakeExam = lazy(() => import('./pages/student/TakeExam').then(m => ({ default: m.TakeExam })));
+
+const TeacherLayout = lazy(() => import('./pages/teacher/TeacherLayout').then(m => ({ default: m.TeacherLayout })));
+const TeacherDashboard = lazy(() => import('./pages/teacher/TeacherDashboard').then(m => ({ default: m.TeacherDashboard })));
+const TeacherExams = lazy(() => import('./pages/teacher/TeacherExams').then(m => ({ default: m.TeacherExams })));
+const TeacherClasses = lazy(() => import('./pages/teacher/TeacherClasses').then(m => ({ default: m.TeacherClasses })));
+const TeacherGrade = lazy(() => import('./pages/teacher/TeacherGrade').then(m => ({ default: m.TeacherGrade })));
+const TeacherProfile = lazy(() => import('./pages/teacher/TeacherProfile').then(m => ({ default: m.TeacherProfile })));
+const TeacherViolationCases = lazy(() => import('./pages/teacher/TeacherViolationCases').then(m => ({ default: m.TeacherViolationCases })));
+const TeacherTools = lazy(() => import('./pages/teacher/TeacherTools').then(m => ({ default: m.TeacherTools })));
+
+const AdminLayout = lazy(() => import('./pages/admin/AdminLayout').then(m => ({ default: m.AdminLayout })));
+const AdminDashboard = lazy(() => import('./pages/admin/AdminDashboard').then(m => ({ default: m.AdminDashboard })));
+const AdminExams = lazy(() => import('./pages/admin/AdminExams').then(m => ({ default: m.AdminExams })));
+const AdminResults = lazy(() => import('./pages/admin/AdminResults').then(m => ({ default: m.AdminResults })));
+const AdminReports = lazy(() => import('./pages/admin/AdminReports').then(m => ({ default: m.AdminReports })));
+const AdminUsers = lazy(() => import('./pages/admin/AdminUsers').then(m => ({ default: m.AdminUsers })));
+const AdminClasses = lazy(() => import('./pages/admin/AdminClasses').then(m => ({ default: m.AdminClasses })));
+const AdminProfile = lazy(() => import('./pages/admin/AdminProfile').then(m => ({ default: m.AdminProfile })));
+const AdminApiReference = lazy(() => import('./pages/admin/AdminApiReference').then(m => ({ default: m.AdminApiReference })));
+const AdminTools = lazy(() => import('./pages/admin/AdminTools').then(m => ({ default: m.AdminTools })));
+
+function Loading() {
+  return null;
+}
 
 export function createAppRouter() {
   return createBrowserRouter([
     { path: '/', Component: Landing, errorElement: <RouterErrorPage /> },
     { path: '/login', Component: Login, errorElement: <RouterErrorPage /> },
     { path: '/register', Component: Register, errorElement: <RouterErrorPage /> },
-
     { path: '/preview/take-exam', Component: ExamTakingPreview, errorElement: <RouterErrorPage /> },
     {
       path: '/student',
-      Component: StudentLayout,
+      Component: () => <Suspense fallback={<Loading />}><StudentLayout /></Suspense>,
       errorElement: <RouterErrorPage />,
       children: [
         { index: true, Component: StudentDashboard },
@@ -52,7 +60,7 @@ export function createAppRouter() {
     },
     {
       path: '/teacher',
-      Component: TeacherLayout,
+      Component: () => <Suspense fallback={<Loading />}><TeacherLayout /></Suspense>,
       errorElement: <RouterErrorPage />,
       children: [
         { index: true, Component: TeacherDashboard },
@@ -66,7 +74,7 @@ export function createAppRouter() {
     },
     {
       path: '/admin',
-      Component: AdminLayout,
+      Component: () => <Suspense fallback={<Loading />}><AdminLayout /></Suspense>,
       errorElement: <RouterErrorPage />,
       children: [
         { index: true, Component: AdminDashboard },

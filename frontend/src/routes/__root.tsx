@@ -1,6 +1,6 @@
 /// <reference types="vite/client" />
 
-import { useEffect, useState, type ReactNode } from 'react';
+import type { ReactNode } from 'react';
 import {
   HeadContent,
   Scripts,
@@ -24,13 +24,7 @@ export const Route = createRootRoute({
 });
 
 function RootComponent() {
-  const [isMounted, setIsMounted] = useState(false);
-
-  useEffect(() => {
-    setIsMounted(true);
-  }, []);
-
-  return isMounted ? <App /> : null;
+  return <App />;
 }
 
 function RootDocument({ children }: Readonly<{ children: ReactNode }>) {
